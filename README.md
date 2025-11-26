@@ -141,6 +141,11 @@ coreui-free-react-admin-template
 └── vite.config.mjs  # vite config
 ```
 
+## Project structure
+
+- `src/template/` – CoreUI template shell including layouts, shared components, styles, and demo views kept for reference.
+- `src/app/` – Skills Barter domain code: navigation, routing, and feature scaffolding for offers, messages, profile, admin, and auth.
+
 ## Documentation
 
 The documentation for the CoreUI Admin Template is hosted at our website [CoreUI for React](https://coreui.io/react/docs/templates/installation/)
