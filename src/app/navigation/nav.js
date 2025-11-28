@@ -1,5 +1,13 @@
 import CIcon from '@coreui/icons-react'
-import { cilDescription, cilEnvelopeOpen, cilPuzzle, cilSpeedometer, cilStar } from '@coreui/icons'
+import {
+  cilAddressBook,
+  cilEnvelopeOpen,
+  cilLayers,
+  cilLockLocked,
+  cilSpeedometer,
+  cilUser,
+  cilUserPlus,
+} from '@coreui/icons'
 import { CNavItem } from '@coreui/react'
 
 const appNavigation = [
@@ -13,7 +21,7 @@ const appNavigation = [
     component: CNavItem,
     name: 'Offers',
     to: '/offers',
-    icon: <CIcon icon={cilDescription} customClassName="nav-icon" />,
+    icon: <CIcon icon={cilLayers} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,
@@ -25,13 +33,25 @@ const appNavigation = [
     component: CNavItem,
     name: 'Profile',
     to: '/profile',
-    icon: <CIcon icon={cilStar} customClassName="nav-icon" />,
+    icon: <CIcon icon={cilUser} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,
     name: 'Admin',
     to: '/admin',
-    icon: <CIcon icon={cilPuzzle} customClassName="nav-icon" />,
+    icon: <CIcon icon={cilAddressBook} customClassName="nav-icon" />,
+  },
+  {
+    component: CNavItem,
+    name: 'Register',
+    to: '/register',
+    icon: <CIcon icon={cilUserPlus} customClassName="nav-icon" />,
+  },
+  {
+    component: CNavItem,
+    name: 'Login',
+    to: '/login',
+    icon: <CIcon icon={cilLockLocked} customClassName="nav-icon" />,
   },
 ]
 
