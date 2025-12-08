@@ -2,6 +2,7 @@ import React from 'react'
 
 const Home = React.lazy(() => import('../pages/Home'))
 const Offers = React.lazy(() => import('../pages/Offers'))
+const CreateOffer = React.lazy(() => import('../pages/CreateOffer'))
 const OfferDetails = React.lazy(() => import('../pages/OfferDetails'))
 const Messages = React.lazy(() => import('../pages/Messages'))
 const MessageThread = React.lazy(() => import('../pages/MessageThread'))
@@ -14,6 +15,7 @@ const Register = React.lazy(() => import('../features/auth/Register'))
 const routes = [
   { path: '/', name: 'Home', element: Home },
   { path: '/offers', name: 'Offers', element: Offers },
+  { path: '/offers/new', name: 'New Offer', element: CreateOffer },
   { path: '/offers/:id', name: 'Offer Details', element: OfferDetails },
   { path: '/messages', name: 'Messages', element: Messages },
   { path: '/messages/:threadId', name: 'Message Thread', element: MessageThread },
