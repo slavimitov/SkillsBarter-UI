@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { CContainer, CSpinner } from '@coreui/react'
+import ProtectedRoute from '../../app/routing/ProtectedRoute'
 
 const AppContent = ({ routes = [] }) => {
   return (
@@ -15,7 +16,15 @@ const AppContent = ({ routes = [] }) => {
                   path={route.path}
                   exact={route.exact}
                   name={route.name}
-                  element={<route.element />}
+                  element={
+                    route.protected ? (
+                      <ProtectedRoute>
+                        <route.element />
+                      </ProtectedRoute>
+                    ) : (
+                      <route.element />
+                    )
+                  }
                 />
               )
             )

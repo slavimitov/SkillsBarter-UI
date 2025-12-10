@@ -4,6 +4,7 @@ import {
   cilEnvelopeOpen,
   cilLayers,
   cilLockLocked,
+  cilPlus,
   cilSpeedometer,
   cilUser,
   cilUserPlus,
@@ -22,6 +23,12 @@ const appNavigation = [
     name: 'Offers',
     to: '/offers',
     icon: <CIcon icon={cilLayers} customClassName="nav-icon" />,
+  },
+  {
+    component: CNavItem,
+    name: 'Create Offer',
+    to: '/offers/create',
+    icon: <CIcon icon={cilPlus} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,
