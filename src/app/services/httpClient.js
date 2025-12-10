@@ -1,12 +1,12 @@
 import axios from 'axios'
 
-const DEFAULT_API_ROOT = 'https://localhost:7155'
+const DEFAULT_API_ROOT = 'http://localhost:5000'
 
 const resolveEnvBaseUrl = () => {
   const processBaseUrl =
     typeof process !== 'undefined' ? process.env?.REACT_APP_API_BASE_URL : undefined
   const viteBaseUrl =
-    typeof import.meta !== 'undefined' ? import.meta?.env?.REACT_APP_API_BASE_URL : undefined
+    typeof import.meta !== 'undefined' ? import.meta?.env?.VITE_API_BASE_URL : undefined
   return processBaseUrl || viteBaseUrl || DEFAULT_API_ROOT
 }
 
@@ -14,6 +14,12 @@ const resolveApiBaseUrl = () => {
   const root = resolveEnvBaseUrl()
   const trimmedRoot = root.replace(/\/+$/, '')
   return `${trimmedRoot}/api`
+}
+
+let logoutCallback = null
+
+export const setLogoutCallback = (callback) => {
+  logoutCallback = callback
 }
 
 const httpClient = axios.create({
@@ -31,15 +37,14 @@ httpClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
-  // TODO: update token retrieval if auth storage changes
   return config
 })
 
 httpClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error?.response?.status === 401) {
-      // TODO: handle unauthorized responses globally
+    if (error?.response?.status === 401 && logoutCallback) {
+      logoutCallback()
     }
     return Promise.reject(error)
   },
