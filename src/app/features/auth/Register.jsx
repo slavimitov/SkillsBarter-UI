@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   CAlert,
   CButton,
@@ -20,7 +20,7 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilAt, cilDescription, cilLockLocked, cilUser } from '@coreui/icons'
 
-import httpClient from '../../services/httpClient'
+import { useAuth } from '../../contexts/AuthContext'
 
 const initialValues = {
   name: '',
@@ -36,7 +36,9 @@ const Register = () => {
   const [serverMessage, setServerMessage] = useState('')
   const [serverErrors, setServerErrors] = useState([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
   const navigate = useNavigate()
+  const { register } = useAuth()
 
   const trimmedValues = useMemo(
     () => ({
@@ -90,6 +92,7 @@ const Register = () => {
     setErrors({})
     setServerMessage('')
     setServerErrors([])
+    setSuccessMessage('')
 
     const payload = {
       name: trimmedValues.name,
@@ -101,13 +104,10 @@ const Register = () => {
 
     try {
       setIsSubmitting(true)
-      const { data } = await httpClient.post('/auth/register', payload)
+      const data = await register(payload)
       if (data?.success) {
-        if (data?.token && typeof window !== 'undefined') {
-          window.localStorage.setItem('accessToken', data.token)
-          // TODO: move token persistence into centralized auth handling
-        }
-        navigate('/')
+        setSuccessMessage(data.message || 'Account created successfully!')
+        setTimeout(() => navigate('/'), 2000)
         return
       }
 
@@ -135,6 +135,11 @@ const Register = () => {
                   <p className="text-body-secondary mb-4">
                     Join Skills Barter by sharing a few details below.
                   </p>
+                  {successMessage && (
+                    <CAlert color="success" className="mb-4">
+                      {successMessage}
+                    </CAlert>
+                  )}
                   {serverMessage && (
                     <CAlert color="danger" className="mb-4">
                       <span>{serverMessage}</span>
@@ -226,7 +231,7 @@ const Register = () => {
                     </CInputGroup>
 
                     <div className="d-grid">
-                      <CButton type="submit" color="primary" disabled={isSubmitting}>
+                      <CButton type="submit" color="primary" disabled={isSubmitting || successMessage}>
                         {isSubmitting ? (
                           <>
                             <CSpinner size="sm" className="me-2" />
@@ -238,6 +243,13 @@ const Register = () => {
                       </CButton>
                     </div>
                   </CForm>
+                  <hr className="my-4" />
+                  <div className="text-center">
+                    <span className="text-body-secondary">Already have an account? </span>
+                    <Link to="/login" className="text-decoration-none">
+                      Sign in
+                    </Link>
+                  </div>
                 </CCardBody>
               </CCard>
             </CCardGroup>

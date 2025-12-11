@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import {
   CAlert,
   CButton,
@@ -14,11 +14,14 @@ import {
   CInputGroup,
   CInputGroupText,
   CRow,
+  CSpinner,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilAt, cilLockLocked } from '@coreui/icons'
+import { cilAt, cilLockLocked, cibGoogle, cibFacebook } from '@coreui/icons'
 
 import httpClient from '../../services/httpClient'
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 
 const Login = () => {
   const [email, setEmail] = useState('')
@@ -27,6 +30,17 @@ const Login = () => {
   const [serverError, setServerError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
+
+  const from = location.state?.from?.pathname || '/'
+
+  const handleGoogleLogin = () => {
+    window.location.href = `${API_BASE_URL}/api/auth/login-google`
+  }
+
+  const handleFacebookLogin = () => {
+    window.location.href = `${API_BASE_URL}/api/auth/login-facebook`
+  }
 
   const validate = () => {
     const currentErrors = {}
@@ -56,10 +70,9 @@ const Login = () => {
         password,
       })
 
-      if (data?.success && data?.token && typeof window !== 'undefined') {
-        window.localStorage.setItem('accessToken', data.token)
-        // TODO: centralize auth persistence & redirect logic
-        navigate('/')
+      if (data?.success && data?.token) {
+        localStorage.setItem('accessToken', data.token)
+        navigate(from, { replace: true })
         return
       }
 
@@ -119,12 +132,55 @@ const Login = () => {
                       />
                       <CFormFeedback invalid>{errors.password}</CFormFeedback>
                     </CInputGroup>
-                    <div className="d-grid">
+                    <div className="d-grid mb-3">
                       <CButton color="primary" type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? 'Signing in...' : 'Sign In'}
+                        {isSubmitting ? (
+                          <>
+                            <CSpinner size="sm" className="me-2" />
+                            Signing in...
+                          </>
+                        ) : (
+                          'Sign In'
+                        )}
                       </CButton>
                     </div>
+                    <div className="text-center">
+                      <Link to="/forgot-password" className="text-decoration-none">
+                        Forgot your password?
+                      </Link>
+                    </div>
                   </CForm>
+                  <div className="position-relative my-4">
+                    <hr />
+                    <span className="position-absolute top-50 start-50 translate-middle bg-white px-3 text-body-secondary">
+                      or continue with
+                    </span>
+                  </div>
+                  <div className="d-grid gap-2">
+                    <CButton
+                      color="light"
+                      className="border"
+                      onClick={handleGoogleLogin}
+                    >
+                      <CIcon icon={cibGoogle} className="me-2" />
+                      Sign in with Google
+                    </CButton>
+                    <CButton
+                      color="light"
+                      className="border"
+                      onClick={handleFacebookLogin}
+                    >
+                      <CIcon icon={cibFacebook} className="me-2 text-primary" />
+                      Sign in with Facebook
+                    </CButton>
+                  </div>
+                  <hr className="my-4" />
+                  <div className="text-center">
+                    <span className="text-body-secondary">Don&apos;t have an account? </span>
+                    <Link to="/register" className="text-decoration-none">
+                      Create one
+                    </Link>
+                  </div>
                 </CCardBody>
               </CCard>
             </CCardGroup>
