@@ -26,8 +26,8 @@ const appNavigation = [
   },
   {
     component: CNavItem,
-    name: 'Create Offer',
-    to: '/offers/create',
+    name: 'New Offer',
+    to: '/offers/new',
     icon: <CIcon icon={cilPlus} customClassName="nav-icon" />,
   },
   {
