@@ -1,219 +1,241 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  CAlert,
   CButton,
   CCard,
   CCardBody,
-  CCardHeader,
+  CCardGroup,
   CCol,
+  CContainer,
   CForm,
+  CFormFeedback,
   CFormInput,
-  CFormLabel,
   CFormSelect,
   CFormTextarea,
+  CInputGroup,
+  CInputGroupText,
   CRow,
   CSpinner,
-  CAlert,
 } from '@coreui/react'
-import { useAuth } from '../contexts/AuthContext'
+import CIcon from '@coreui/icons-react'
+import { cilLayers, cilList, cilShortText } from '@coreui/icons'
+
 import httpClient from '../services/httpClient'
 
+const initialValues = {
+  title: '',
+  description: '',
+  skillId: '',
+  extraDetails: '',
+}
+
 const CreateOffer = () => {
-  const navigate = useNavigate()
-  const { isAuthenticated, loading: authLoading } = useAuth()
-
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    skillId: '',
-  })
-
+  const [formValues, setFormValues] = useState(initialValues)
+  const [errors, setErrors] = useState({})
+  const [serverError, setServerError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [skills, setSkills] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [skillsLoading, setSkillsLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
+  const [skillsError, setSkillsError] = useState('')
+  const [isLoadingSkills, setIsLoadingSkills] = useState(false)
+  const navigate = useNavigate()
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate('/login')
-    }
-  }, [isAuthenticated, authLoading, navigate])
-
-  useEffect(() => {
+    let isMounted = true
     const fetchSkills = async () => {
       try {
-        setSkillsLoading(true)
-        const response = await httpClient.get('/skills', { params: { pageSize: 100 } })
-        const payload = response.data
-        const items = Array.isArray(payload) ? payload : payload?.items
-        setSkills(Array.isArray(items) ? items : [])
-      } catch (err) {
-        setError('Failed to load skills. Please try again.')
-        console.error('Error fetching skills:', err)
+        setIsLoadingSkills(true)
+        setSkillsError('')
+        const { data } = await httpClient.get('/skills', {
+          params: { page: 1, pageSize: 100 },
+        })
+        const items = data?.items || data?.Items || []
+        if (isMounted) {
+          setSkills(items)
+        }
+      } catch (error) {
+        if (isMounted) {
+          setSkillsError('Unable to load skills. Please try again.')
+        }
       } finally {
-        setSkillsLoading(false)
+        if (isMounted) {
+          setIsLoadingSkills(false)
+        }
       }
     }
-
-    if (isAuthenticated) {
-      fetchSkills()
+    fetchSkills()
+    return () => {
+      isMounted = false
     }
-  }, [isAuthenticated])
+  }, [])
 
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
-    setError('')
+  const handleChange = (event) => {
+    const { name, value } = event.target
+    setFormValues((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    setSuccess(false)
+  const validate = () => {
+    const validationErrors = {}
+    if (!formValues.title.trim()) {
+      validationErrors.title = 'Title is required.'
+    }
+    if (!formValues.description.trim()) {
+      validationErrors.description = 'Description is required.'
+    }
+    if (!formValues.skillId) {
+      validationErrors.skillId = 'Choose a category.'
+    }
+    return validationErrors
+  }
 
-    if (!formData.title.trim()) {
-      setError('Title is required')
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    const validationErrors = validate()
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors)
       return
     }
 
-    if (!formData.skillId) {
-      setError('Please select a skill')
-      return
+    setErrors({})
+    setServerError('')
+    setSuccessMessage('')
+
+    const mergedDescription = formValues.extraDetails.trim()
+      ? `${formValues.description.trim()}\n\nDetails:\n${formValues.extraDetails.trim()}`
+      : formValues.description.trim()
+
+    const payload = {
+      title: formValues.title.trim(),
+      description: mergedDescription,
+      skillId: Number(formValues.skillId),
     }
 
     try {
-      setLoading(true)
-      const response = await httpClient.post('/offers', {
-        title: formData.title,
-        description: formData.description || null,
-        skillId: parseInt(formData.skillId, 10),
-      })
-
-      if (response.data) {
-        setSuccess(true)
-        setTimeout(() => {
-          navigate('/offers')
-        }, 1500)
-      }
-    } catch (err) {
-      const errorMessage =
-        err.response?.data?.message || 'Failed to create offer. Please try again.'
-      setError(errorMessage)
-      console.error('Error creating offer:', err)
+      setIsSubmitting(true)
+      await httpClient.post('/offers', payload)
+      setSuccessMessage('Offer posted successfully.')
+      setFormValues(initialValues)
+      setTimeout(() => navigate('/offers'), 800)
+    } catch (error) {
+      const message = error?.response?.data?.message || 'Unable to post offer right now.'
+      setServerError(message)
     } finally {
-      setLoading(false)
+      setIsSubmitting(false)
     }
   }
 
-  if (authLoading) {
-    return (
-      <div className="text-center">
-        <CSpinner color="primary" />
-      </div>
-    )
-  }
-
-  if (!isAuthenticated) {
-    return null
-  }
-
   return (
-    <CRow>
-      <CCol xs={12} md={8} lg={6} className="mx-auto">
-        <CCard>
-          <CCardHeader>
-            <h4 className="mb-0">Create New Offer</h4>
-          </CCardHeader>
-          <CCardBody>
-            {error && (
-              <CAlert color="danger" dismissible onClose={() => setError('')}>
-                {error}
-              </CAlert>
-            )}
-            {success && (
-              <CAlert color="success">
-                Offer created successfully! Redirecting to offers page...
-              </CAlert>
-            )}
-
-            <CForm onSubmit={handleSubmit}>
-              <div className="mb-3">
-                <CFormLabel htmlFor="title">Title *</CFormLabel>
-                <CFormInput
-                  type="text"
-                  id="title"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  placeholder="Enter offer title"
-                  disabled={loading}
-                  required
-                />
-              </div>
-
-              <div className="mb-3">
-                <CFormLabel htmlFor="skillId">Skill *</CFormLabel>
-                <CFormSelect
-                  id="skillId"
-                  name="skillId"
-                  value={formData.skillId}
-                  onChange={handleChange}
-                  disabled={loading || skillsLoading}
-                  required
-                >
-                  <option value="">
-                    {skillsLoading ? 'Loading skills...' : 'Select a skill'}
-                  </option>
-                  {skills.map((skill) => (
-                    <option key={skill.id} value={skill.id}>
-                      {skill.name}
-                      {skill.categoryLabel ? ` (${skill.categoryLabel})` : ''}
-                    </option>
-                  ))}
-                </CFormSelect>
-              </div>
-
-              <div className="mb-3">
-                <CFormLabel htmlFor="description">Description</CFormLabel>
-                <CFormTextarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  placeholder="Enter offer description (optional)"
-                  rows={4}
-                  disabled={loading}
-                />
-              </div>
-
-              <div className="d-grid gap-2 d-md-flex justify-content-md-end">
-                <CButton
-                  color="secondary"
-                  onClick={() => navigate('/offers')}
-                  disabled={loading}
-                >
-                  Cancel
-                </CButton>
-                <CButton color="primary" type="submit" disabled={loading || skillsLoading}>
-                  {loading ? (
-                    <>
-                      <CSpinner component="span" size="sm" aria-hidden="true" /> Creating...
-                    </>
-                  ) : (
-                    'Create Offer'
+    <div className="bg-body-tertiary min-vh-100 d-flex align-items-center">
+      <CContainer>
+        <CRow className="justify-content-center">
+          <CCol md={9} lg={7} xl={6}>
+            <CCardGroup>
+              <CCard className="shadow-sm border-0">
+                <CCardBody className="p-4">
+                  <h1>Share an offer</h1>
+                  <p className="text-body-secondary mb-4">
+                    Describe the skill or service you want to exchange with the community.
+                  </p>
+                  {serverError && (
+                    <CAlert color="danger" className="mb-4">
+                      {serverError}
+                    </CAlert>
                   )}
-                </CButton>
-              </div>
-            </CForm>
-          </CCardBody>
-        </CCard>
-      </CCol>
-    </CRow>
+                  {successMessage && (
+                    <CAlert color="success" className="mb-4">
+                      {successMessage}
+                    </CAlert>
+                  )}
+                  <CForm onSubmit={handleSubmit} noValidate>
+                    <CInputGroup className="mb-3">
+                      <CInputGroupText>
+                        <CIcon icon={cilShortText} />
+                      </CInputGroupText>
+                      <CFormInput
+                        name="title"
+                        placeholder="Offer title"
+                        autoComplete="off"
+                        value={formValues.title}
+                        invalid={Boolean(errors.title)}
+                        onChange={handleChange}
+                      />
+                      <CFormFeedback invalid>{errors.title}</CFormFeedback>
+                    </CInputGroup>
+                    <CInputGroup className="mb-3">
+                      <CInputGroupText>
+                        <CIcon icon={cilLayers} />
+                      </CInputGroupText>
+                      <CFormSelect
+                        name="skillId"
+                        value={formValues.skillId}
+                        invalid={Boolean(errors.skillId)}
+                        onChange={handleChange}
+                        disabled={isLoadingSkills || Boolean(skillsError)}
+                      >
+                        <option value="">Select a category</option>
+                        {skills.map((skill) => (
+                          <option key={skill.id || skill.Id} value={skill.id || skill.Id}>
+                            {skill.name || skill.Name}{' '}
+                            {skill.categoryLabel || skill.CategoryLabel
+                              ? `· ${skill.categoryLabel || skill.CategoryLabel}`
+                              : ''}
+                          </option>
+                        ))}
+                      </CFormSelect>
+                      <CFormFeedback invalid>{errors.skillId}</CFormFeedback>
+                    </CInputGroup>
+                    {skillsError && (
+                      <CAlert color="warning" className="mb-3">
+                        {skillsError}
+                      </CAlert>
+                    )}
+                    <CInputGroup className="mb-3">
+                      <CInputGroupText>
+                        <CIcon icon={cilList} />
+                      </CInputGroupText>
+                      <CFormTextarea
+                        name="description"
+                        placeholder="Describe what you are offering"
+                        value={formValues.description}
+                        invalid={Boolean(errors.description)}
+                        rows={4}
+                        onChange={handleChange}
+                      />
+                      <CFormFeedback invalid>{errors.description}</CFormFeedback>
+                    </CInputGroup>
+                    <CInputGroup className="mb-4">
+                      <CInputGroupText>Notes</CInputGroupText>
+                      <CFormTextarea
+                        name="extraDetails"
+                        placeholder="Availability, expectations, or anything helpful (optional)"
+                        value={formValues.extraDetails}
+                        rows={3}
+                        onChange={handleChange}
+                      />
+                    </CInputGroup>
+                    <div className="d-grid">
+                      <CButton color="primary" type="submit" disabled={isSubmitting}>
+                        {isSubmitting ? (
+                          <>
+                            <CSpinner size="sm" className="me-2" />
+                            Publishing...
+                          </>
+                        ) : (
+                          'Post Offer'
+                        )}
+                      </CButton>
+                    </div>
+                  </CForm>
+                </CCardBody>
+              </CCard>
+            </CCardGroup>
+          </CCol>
+        </CRow>
+      </CContainer>
+    </div>
   )
 }
 
 export default CreateOffer
+
