@@ -20,6 +20,7 @@ const OAuthCallback = () => {
     const token = searchParams.get('token')
     const success = searchParams.get('success')
     const errorMessage = searchParams.get('error')
+    const newUser = searchParams.get('newUser')
 
     if (errorMessage) {
       setError(errorMessage)
@@ -28,7 +29,13 @@ const OAuthCallback = () => {
 
     if (success === 'true' && token) {
       localStorage.setItem('accessToken', token)
-      navigate('/', { replace: true })
+
+      // If this is a new OAuth user, redirect to profile completion
+      if (newUser === 'true') {
+        navigate('/register?oauth=1', { replace: true })
+      } else {
+        navigate('/', { replace: true })
+      }
       return
     }
 

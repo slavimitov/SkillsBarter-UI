@@ -152,7 +152,7 @@ const Login = () => {
                   </CForm>
                   <div className="position-relative my-4">
                     <hr />
-                    <span className="position-absolute top-50 start-50 translate-middle bg-white px-3 text-body-secondary">
+                    <span className="position-absolute top-50 start-50 translate-middle bg-body px-3 text-body-secondary">
                       or continue with
                     </span>
                   </div>

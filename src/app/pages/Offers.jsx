@@ -71,7 +71,7 @@ const Offers = () => {
   }, [])
 
   const handleCreateOffer = () => {
-    navigate(isAuthenticated ? '/offers/create' : '/login')
+    navigate(isAuthenticated ? '/offers/new' : '/login')
   }
 
   const hasOffers = useMemo(() => Array.isArray(offers) && offers.length > 0, [offers])
