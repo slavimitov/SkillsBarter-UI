@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import React, { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   CAlert,
   CButton,
@@ -18,9 +18,12 @@ import {
   CSpinner,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilAt, cilDescription, cilLockLocked, cilUser } from '@coreui/icons'
+import { cilAt, cilDescription, cilLockLocked, cilUser, cibGoogle } from '@coreui/icons'
 
 import { useAuth } from '../../contexts/AuthContext'
+import httpClient from '../../services/httpClient'
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 
 const initialValues = {
   name: '',
@@ -31,6 +34,8 @@ const initialValues = {
 }
 
 const Register = () => {
+  const [searchParams] = useSearchParams()
+  const oauthMode = searchParams.get('oauth') === '1'
   const [formValues, setFormValues] = useState(initialValues)
   const [errors, setErrors] = useState({})
   const [serverMessage, setServerMessage] = useState('')
@@ -38,7 +43,41 @@ const Register = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
   const navigate = useNavigate()
-  const { register } = useAuth()
+  const { register, isAuthenticated, loading, refreshProfile } = useAuth()
+
+  const handleGoogleRegister = () => {
+    window.location.href = `${API_BASE_URL}/api/auth/login-google`
+  }
+
+  useEffect(() => {
+    const hydrateOAuthUser = async () => {
+      if (!oauthMode) return
+
+      if (!loading && !isAuthenticated) {
+        navigate('/login', { replace: true })
+        return
+      }
+
+      // Wait for auth context to finish its initial load to avoid double calls
+      if (loading) return
+
+      try {
+        const { data } = await httpClient.get('/auth/profile')
+        if (data?.success && data?.profile) {
+          setFormValues((prev) => ({
+            ...prev,
+            name: data.profile?.name || prev.name,
+            email: data.profile?.email || prev.email,
+          }))
+        }
+      } catch {
+        // If profile fetch fails, force user back to login
+        navigate('/login', { replace: true })
+      }
+    }
+
+    hydrateOAuthUser()
+  }, [oauthMode, loading, isAuthenticated, navigate])
 
   const trimmedValues = useMemo(
     () => ({
@@ -51,6 +90,13 @@ const Register = () => {
 
   const validate = () => {
     const validationErrors = {}
+    if (oauthMode) {
+      if (!trimmedValues.description) {
+        validationErrors.description = 'Description is required.'
+      }
+      return validationErrors
+    }
+
     if (!trimmedValues.name) {
       validationErrors.name = 'Name is required.'
     }
@@ -94,16 +140,32 @@ const Register = () => {
     setServerErrors([])
     setSuccessMessage('')
 
-    const payload = {
-      name: trimmedValues.name,
-      email: trimmedValues.email,
-      password: formValues.password,
-      confirmPassword: formValues.confirmPassword,
-      description: trimmedValues.description || null,
-    }
-
     try {
       setIsSubmitting(true)
+      if (oauthMode) {
+        const { data } = await httpClient.put('/users/profile', {
+          description: trimmedValues.description,
+        })
+
+        if (data?.success) {
+          await refreshProfile()
+          setSuccessMessage(data?.message || 'Registration completed successfully!')
+          setTimeout(() => navigate('/'), 1200)
+          return
+        }
+
+        setServerMessage(data?.message || 'Unable to complete registration.')
+        return
+      }
+
+      const payload = {
+        name: trimmedValues.name,
+        email: trimmedValues.email,
+        password: formValues.password,
+        confirmPassword: formValues.confirmPassword,
+        description: trimmedValues.description || null,
+      }
+
       const data = await register(payload)
       if (data?.success) {
         setSuccessMessage(data.message || 'Account created successfully!')
@@ -116,7 +178,7 @@ const Register = () => {
     } catch (error) {
       const responseMessage = error?.response?.data?.message
       const responseErrors = error?.response?.data?.errors
-      setServerMessage(responseMessage || 'Unable to create your account.')
+      setServerMessage(responseMessage || (oauthMode ? 'Unable to complete registration.' : 'Unable to create your account.'))
       setServerErrors(responseErrors || [])
     } finally {
       setIsSubmitting(false)
@@ -133,8 +195,26 @@ const Register = () => {
                 <CCardBody className="p-4">
                   <h1>Create Account</h1>
                   <p className="text-body-secondary mb-4">
-                    Join Skills Barter by sharing a few details below.
+                    {oauthMode
+                      ? 'Welcome! Please add a short description to complete your Google registration.'
+                      : 'Join Skills Barter by sharing a few details below.'}
                   </p>
+                  {!oauthMode && (
+                    <>
+                      <div className="d-grid gap-2 mb-4">
+                        <CButton color="light" className="border" onClick={handleGoogleRegister}>
+                          <CIcon icon={cibGoogle} className="me-2" />
+                          Sign up with Google
+                        </CButton>
+                      </div>
+                      <div className="position-relative my-4">
+                        <hr />
+                        <span className="position-absolute top-50 start-50 translate-middle bg-body px-3 text-body-secondary">
+                          or sign up with email
+                        </span>
+                      </div>
+                    </>
+                  )}
                   {successMessage && (
                     <CAlert color="success" className="mb-4">
                       {successMessage}
@@ -153,69 +233,98 @@ const Register = () => {
                     </CAlert>
                   )}
                   <CForm onSubmit={handleSubmit} noValidate>
-                    <CInputGroup className="mb-3">
-                      <CInputGroupText>
-                        <CIcon icon={cilUser} />
-                      </CInputGroupText>
-                      <CFormInput
-                        name="name"
-                        placeholder="Name"
-                        autoComplete="name"
-                        value={formValues.name}
-                        onChange={handleChange}
-                        invalid={Boolean(errors.name)}
-                      />
-                      <CFormFeedback invalid>{errors.name}</CFormFeedback>
-                    </CInputGroup>
+                    {oauthMode && (
+                      <>
+                        <CInputGroup className="mb-3">
+                          <CInputGroupText>
+                            <CIcon icon={cilUser} />
+                          </CInputGroupText>
+                          <CFormInput name="name" placeholder="Name" value={formValues.name} disabled readOnly />
+                        </CInputGroup>
 
-                    <CInputGroup className="mb-3">
-                      <CInputGroupText>
-                        <CIcon icon={cilAt} />
-                      </CInputGroupText>
-                      <CFormInput
-                        type="email"
-                        name="email"
-                        placeholder="Email"
-                        autoComplete="email"
-                        value={formValues.email}
-                        onChange={handleChange}
-                        invalid={Boolean(errors.email)}
-                      />
-                      <CFormFeedback invalid>{errors.email}</CFormFeedback>
-                    </CInputGroup>
+                        <CInputGroup className="mb-3">
+                          <CInputGroupText>
+                            <CIcon icon={cilAt} />
+                          </CInputGroupText>
+                          <CFormInput
+                            type="email"
+                            name="email"
+                            placeholder="Email"
+                            value={formValues.email}
+                            disabled
+                            readOnly
+                          />
+                        </CInputGroup>
+                      </>
+                    )}
 
-                    <CInputGroup className="mb-3">
-                      <CInputGroupText>
-                        <CIcon icon={cilLockLocked} />
-                      </CInputGroupText>
-                      <CFormInput
-                        type="password"
-                        name="password"
-                        placeholder="Password (min 8 characters)"
-                        autoComplete="new-password"
-                        value={formValues.password}
-                        onChange={handleChange}
-                        invalid={Boolean(errors.password)}
-                        minLength={8}
-                      />
-                      <CFormFeedback invalid>{errors.password}</CFormFeedback>
-                    </CInputGroup>
+                    {!oauthMode && (
+                      <>
+                        <CInputGroup className="mb-3">
+                          <CInputGroupText>
+                            <CIcon icon={cilUser} />
+                          </CInputGroupText>
+                          <CFormInput
+                            name="name"
+                            placeholder="Name"
+                            autoComplete="name"
+                            value={formValues.name}
+                            onChange={handleChange}
+                            invalid={Boolean(errors.name)}
+                          />
+                          <CFormFeedback invalid>{errors.name}</CFormFeedback>
+                        </CInputGroup>
 
-                    <CInputGroup className="mb-3">
-                      <CInputGroupText>
-                        <CIcon icon={cilLockLocked} />
-                      </CInputGroupText>
-                      <CFormInput
-                        type="password"
-                        name="confirmPassword"
-                        placeholder="Confirm password"
-                        autoComplete="new-password"
-                        value={formValues.confirmPassword}
-                        onChange={handleChange}
-                        invalid={Boolean(errors.confirmPassword)}
-                      />
-                      <CFormFeedback invalid>{errors.confirmPassword}</CFormFeedback>
-                    </CInputGroup>
+                        <CInputGroup className="mb-3">
+                          <CInputGroupText>
+                            <CIcon icon={cilAt} />
+                          </CInputGroupText>
+                          <CFormInput
+                            type="email"
+                            name="email"
+                            placeholder="Email"
+                            autoComplete="email"
+                            value={formValues.email}
+                            onChange={handleChange}
+                            invalid={Boolean(errors.email)}
+                          />
+                          <CFormFeedback invalid>{errors.email}</CFormFeedback>
+                        </CInputGroup>
+
+                        <CInputGroup className="mb-3">
+                          <CInputGroupText>
+                            <CIcon icon={cilLockLocked} />
+                          </CInputGroupText>
+                          <CFormInput
+                            type="password"
+                            name="password"
+                            placeholder="Password (min 8 characters)"
+                            autoComplete="new-password"
+                            value={formValues.password}
+                            onChange={handleChange}
+                            invalid={Boolean(errors.password)}
+                            minLength={8}
+                          />
+                          <CFormFeedback invalid>{errors.password}</CFormFeedback>
+                        </CInputGroup>
+
+                        <CInputGroup className="mb-3">
+                          <CInputGroupText>
+                            <CIcon icon={cilLockLocked} />
+                          </CInputGroupText>
+                          <CFormInput
+                            type="password"
+                            name="confirmPassword"
+                            placeholder="Confirm password"
+                            autoComplete="new-password"
+                            value={formValues.confirmPassword}
+                            onChange={handleChange}
+                            invalid={Boolean(errors.confirmPassword)}
+                          />
+                          <CFormFeedback invalid>{errors.confirmPassword}</CFormFeedback>
+                        </CInputGroup>
+                      </>
+                    )}
 
                     <CInputGroup className="mb-4">
                       <CInputGroupText>
@@ -223,11 +332,13 @@ const Register = () => {
                       </CInputGroupText>
                       <CFormTextarea
                         name="description"
-                        placeholder="Tell others about your skills (optional)"
+                        placeholder={oauthMode ? 'Tell others about your skills (required)' : 'Tell others about your skills (optional)'}
                         value={formValues.description}
                         onChange={handleChange}
                         rows={3}
+                        invalid={Boolean(errors.description)}
                       />
+                      {oauthMode && <CFormFeedback invalid>{errors.description}</CFormFeedback>}
                     </CInputGroup>
 
                     <div className="d-grid">
@@ -235,10 +346,10 @@ const Register = () => {
                         {isSubmitting ? (
                           <>
                             <CSpinner size="sm" className="me-2" />
-                            Creating account...
+                            {oauthMode ? 'Completing registration...' : 'Creating account...'}
                           </>
                         ) : (
-                          'Create Account'
+                          oauthMode ? 'Complete Registration' : 'Create Account'
                         )}
                       </CButton>
                     </div>

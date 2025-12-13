@@ -35,6 +35,24 @@ export const AuthProvider = ({ children }) => {
     initAuth()
   }, [])
 
+  const refreshProfile = useCallback(async () => {
+    const token = localStorage.getItem('accessToken')
+    if (!token) {
+      return { success: false, message: 'Not authenticated' }
+    }
+    try {
+      const { data } = await httpClient.get('/auth/profile')
+      if (data?.success && data?.profile) {
+        setUser(data.profile)
+        setIsAuthenticated(true)
+        return { success: true, profile: data.profile }
+      }
+      return { success: false, message: data?.message || 'Failed to refresh profile' }
+    } catch (error) {
+      return { success: false, message: error?.response?.data?.message || 'Failed to refresh profile' }
+    }
+  }, [])
+
   useEffect(() => {
     setLogoutCallback(logout)
   }, [logout])
@@ -80,6 +98,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     login,
     register,
+    refreshProfile,
     logout,
     forgotPassword,
     resetPassword,
