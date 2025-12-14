@@ -37,7 +37,7 @@ const Profile = () => {
         setLoading(true)
         setError(null)
         // Adjust endpoint based on your backend
-        const response = await httpClient.get('/auth/profile')
+        const response = await httpClient.get('/users/profile')
         setProfile(response.data.profile)
         setFormData(response.data.profile)
       } catch (err) {
@@ -90,7 +90,7 @@ const Profile = () => {
   const handleSave = async () => {
     try {
       // Send update to backend
-      await httpClient.put('/auth/profile', formData)
+      await httpClient.put('/users/profile', formData)
       setProfile(formData)
       setIsEditing(false)
     } catch (err) {
