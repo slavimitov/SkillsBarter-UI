@@ -23,6 +23,39 @@ import { cilLayers, cilList, cilShortText } from '@coreui/icons'
 
 import httpClient from '../services/httpClient'
 
+const normalizeSkill = (skill) => {
+  const id = skill?.id ?? skill?.Id
+  const name = skill?.name ?? skill?.Name
+  const categoryLabel = skill?.categoryLabel ?? skill?.CategoryLabel
+  const categoryCode = skill?.categoryCode ?? skill?.CategoryCode
+  return {
+    id,
+    name,
+    categoryLabel: categoryLabel || categoryCode || 'Other',
+  }
+}
+
+const groupSkillsByCategory = (skills = []) => {
+  const groups = new Map()
+  skills
+    .map(normalizeSkill)
+    .filter((s) => s.id != null && s.name)
+    .forEach((s) => {
+      const key = s.categoryLabel || 'Other'
+      const next = groups.get(key) || []
+      next.push(s)
+      groups.set(key, next)
+    })
+
+  // Sort categories and skills for consistent UX
+  return Array.from(groups.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([category, items]) => ({
+      category,
+      items: items.sort((x, y) => x.name.localeCompare(y.name)),
+    }))
+}
+
 const initialValues = {
   title: '',
   description: '',
@@ -84,7 +117,7 @@ const CreateOffer = () => {
       validationErrors.description = 'Description is required.'
     }
     if (!formValues.skillId) {
-      validationErrors.skillId = 'Choose a category.'
+      validationErrors.skillId = 'Choose a skill.'
     }
     return validationErrors
   }
@@ -173,14 +206,15 @@ const CreateOffer = () => {
                         onChange={handleChange}
                         disabled={isLoadingSkills || Boolean(skillsError)}
                       >
-                        <option value="">Select a category</option>
-                        {skills.map((skill) => (
-                          <option key={skill.id || skill.Id} value={skill.id || skill.Id}>
-                            {skill.name || skill.Name}{' '}
-                            {skill.categoryLabel || skill.CategoryLabel
-                              ? `· ${skill.categoryLabel || skill.CategoryLabel}`
-                              : ''}
-                          </option>
+                        <option value="">Select a skill</option>
+                        {groupSkillsByCategory(skills).map((group) => (
+                          <optgroup key={group.category} label={`--${group.category}`}>
+                            {group.items.map((skill) => (
+                              <option key={skill.id} value={skill.id}>
+                                {skill.name}
+                              </option>
+                            ))}
+                          </optgroup>
                         ))}
                       </CFormSelect>
                       <CFormFeedback invalid>{errors.skillId}</CFormFeedback>

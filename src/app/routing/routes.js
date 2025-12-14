@@ -15,6 +15,7 @@ const ForgotPassword = React.lazy(() => import('../features/auth/ForgotPassword'
 const ResetPassword = React.lazy(() => import('../features/auth/ResetPassword'))
 const EmailVerification = React.lazy(() => import('../features/auth/EmailVerification'))
 const OAuthCallback = React.lazy(() => import('../features/auth/OAuthCallback'))
+const OAuthProfileCompletion = React.lazy(() => import('../features/auth/OAuthProfileCompletion'))
 
 const routes = [
   { path: '/', name: 'Home', element: Home },
@@ -32,6 +33,7 @@ const routes = [
   { path: '/reset-password', name: 'Reset Password', element: ResetPassword, layout: 'public' },
   { path: '/verify-email', name: 'Email Verification', element: EmailVerification, layout: 'public' },
   { path: '/oauth-callback', name: 'OAuth Callback', element: OAuthCallback, layout: 'public' },
+  { path: '/complete-profile', name: 'Complete Profile', element: OAuthProfileCompletion, protected: true },
 ]
 
 export default routes
