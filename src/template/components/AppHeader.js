@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import {
+  CBadge,
   CContainer,
   CDropdown,
   CDropdownItem,
@@ -28,12 +29,41 @@ import {
 import { AppBreadcrumb } from './index'
 import { AppHeaderDropdown } from './header/index'
 
+import { useAuth } from '../../app/contexts/AuthContext'
+
+const getPrimaryRole = (roles) => {
+  if (!Array.isArray(roles) || roles.length === 0) return null
+  const priority = ['Admin', 'Moderator', 'Premium', 'Freemium']
+  for (const r of priority) {
+    if (roles.includes(r)) return r
+  }
+  return roles[0]
+}
+
+const getRoleCapsule = (role) => {
+  switch (role) {
+    case 'Admin':
+      return { label: 'Admin', color: 'danger' }
+    case 'Moderator':
+      return { label: 'Mod', color: 'warning' }
+    case 'Premium':
+      return { label: 'Premium', color: 'success' }
+    case 'Freemium':
+      return { label: 'Free', color: 'info' }
+    default:
+      return null
+  }
+}
+
 const AppHeader = ({ routes = [] }) => {
   const headerRef = useRef()
   const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
 
   const dispatch = useDispatch()
   const sidebarShow = useSelector((state) => state.sidebarShow)
+
+  const { user } = useAuth()
+  const capsule = getRoleCapsule(getPrimaryRole(user?.roles))
 
   useEffect(() => {
     const handleScroll = () => {
@@ -74,7 +104,18 @@ const AppHeader = ({ routes = [] }) => {
         <CHeaderNav className="ms-auto">
           <CNavItem>
             <CNavLink href="#">
-              <CIcon icon={cilBell} size="lg" />
+              <span className="position-relative d-inline-flex align-items-center">
+                {capsule && (
+                  <CBadge
+                    color={capsule.color}
+                    className="position-absolute top-50 end-100 translate-middle-y me-2 rounded-pill px-2 py-1"
+                    style={{ fontSize: '0.7rem', lineHeight: 1 }}
+                  >
+                    {capsule.label}
+                  </CBadge>
+                )}
+                <CIcon icon={cilBell} size="lg" />
+              </span>
             </CNavLink>
           </CNavItem>
           <CNavItem>
