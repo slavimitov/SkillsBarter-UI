@@ -40,23 +40,26 @@ const Profile = () => {
         <div className="d-flex align-items-center mb-3">
           <div className="position-relative me-3">
             <CAvatar src={avatar8} size="lg" />
-            {capsule && (
-              <CBadge
-                color={capsule.color}
-                className="position-absolute top-50 start-100 translate-middle-y ms-1 rounded-pill px-2 py-1"
-              >
-                {capsule.label}
-              </CBadge>
-            )}
           </div>
           <div>
             <CCardTitle className="mb-0">Your Profile</CCardTitle>
             {user?.userName && <small className="text-body-secondary">@{user.userName}</small>}
           </div>
         </div>
-        <CBadge color="success" className="mb-3">
-          Editable soon
-        </CBadge>
+        <div className="d-flex align-items-center gap-2 mb-3">
+          {capsule && (
+            <CBadge
+              color={capsule.color}
+              className="rounded-pill px-2 py-1 text-nowrap"
+              style={{ fontSize: '0.75rem', lineHeight: 1 }}
+            >
+              {capsule.label}
+            </CBadge>
+          )}
+          <CBadge color="success" className="text-nowrap">
+            Editable soon
+          </CBadge>
+        </div>
         <CCardText>
           Manage your bio, availability, and highlighted skills right here once profile editing is
           ready.
