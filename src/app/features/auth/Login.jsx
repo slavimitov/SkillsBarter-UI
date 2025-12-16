@@ -19,7 +19,7 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilAt, cilLockLocked, cibGoogle, cibFacebook } from '@coreui/icons'
 
-import httpClient from '../../services/httpClient'
+import { useAuth } from '../../contexts/AuthContext'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 
@@ -31,6 +31,7 @@ const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
+  const { login } = useAuth()
 
   const from = location.state?.from?.pathname || '/'
 
@@ -65,13 +66,9 @@ const Login = () => {
 
     try {
       setIsSubmitting(true)
-      const { data } = await httpClient.post('/auth/login', {
-        email: email.trim(),
-        password,
-      })
+      const data = await login(email.trim(), password)
 
-      if (data?.success && data?.token) {
-        localStorage.setItem('accessToken', data.token)
+      if (data?.success) {
         navigate(from, { replace: true })
         return
       }
