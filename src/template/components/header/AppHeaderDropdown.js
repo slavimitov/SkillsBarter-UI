@@ -2,6 +2,7 @@ import React from 'react'
 import {
   CAvatar,
   CBadge,
+  CButton,
   CDropdown,
   CDropdownDivider,
   CDropdownHeader,
@@ -28,12 +29,24 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../app/contexts/AuthContext'
 
 const AppHeaderDropdown = () => {
-  const { logout } = useAuth()
+  const { logout, isAuthenticated, loading } = useAuth()
   const navigate = useNavigate()
 
   const handleLogout = () => {
     logout()
     navigate('/login')
+  }
+
+  if (loading) {
+    return null
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <CButton color="primary" variant="outline" size="sm" onClick={() => navigate('/login')}>
+        Login
+      </CButton>
+    )
   }
 
   return (
