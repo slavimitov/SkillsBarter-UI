@@ -3,9 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import {
   CAlert,
   CButton,
-  CCard,
-  CCardBody,
-  CCardGroup,
   CCol,
   CContainer,
   CForm,
@@ -13,13 +10,11 @@ import {
   CFormInput,
   CFormSelect,
   CFormTextarea,
-  CInputGroup,
-  CInputGroupText,
   CRow,
   CSpinner,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilLayers, cilList, cilShortText } from '@coreui/icons'
+import { cilGift, cilLayers, cilList, cilNotes, cilShortText } from '@coreui/icons'
 
 import httpClient from '../services/httpClient'
 
@@ -159,111 +154,164 @@ const CreateOffer = () => {
   }
 
   return (
-    <div className="bg-body-tertiary min-vh-100 d-flex align-items-center">
+    <div className="bg-body-tertiary min-vh-100 d-flex align-items-center py-5">
       <CContainer>
         <CRow className="justify-content-center">
-          <CCol md={9} lg={7} xl={6}>
-            <CCardGroup>
-              <CCard className="shadow-sm border-0">
-                <CCardBody className="p-4">
-                  <h1>Share an offer</h1>
-                  <p className="text-body-secondary mb-4">
-                    Describe the skill or service you want to exchange with the community.
-                  </p>
-                  {serverError && (
-                    <CAlert color="danger" className="mb-4">
-                      {serverError}
-                    </CAlert>
-                  )}
-                  {successMessage && (
-                    <CAlert color="success" className="mb-4">
-                      {successMessage}
-                    </CAlert>
-                  )}
-                  <CForm onSubmit={handleSubmit} noValidate>
-                    <CInputGroup className="mb-3">
-                      <CInputGroupText>
-                        <CIcon icon={cilShortText} />
-                      </CInputGroupText>
-                      <CFormInput
-                        name="title"
-                        placeholder="Offer title"
-                        autoComplete="off"
-                        value={formValues.title}
-                        invalid={Boolean(errors.title)}
-                        onChange={handleChange}
-                      />
-                      <CFormFeedback invalid>{errors.title}</CFormFeedback>
-                    </CInputGroup>
-                    <CInputGroup className="mb-3">
-                      <CInputGroupText>
-                        <CIcon icon={cilLayers} />
-                      </CInputGroupText>
-                      <CFormSelect
-                        name="skillId"
-                        value={formValues.skillId}
-                        invalid={Boolean(errors.skillId)}
-                        onChange={handleChange}
-                        disabled={isLoadingSkills || Boolean(skillsError)}
-                      >
-                        <option value="">Select a skill</option>
-                        {groupSkillsByCategory(skills).map((group) => (
-                          <optgroup key={group.category} label={`--${group.category}`}>
-                            {group.items.map((skill) => (
-                              <option key={skill.id} value={skill.id}>
-                                {skill.name}
-                              </option>
-                            ))}
-                          </optgroup>
-                        ))}
-                      </CFormSelect>
-                      <CFormFeedback invalid>{errors.skillId}</CFormFeedback>
-                    </CInputGroup>
+          <CCol lg={10} xl={8}>
+            <div className="bg-body rounded-4 shadow overflow-hidden">
+              {/* Header Section */}
+              <div
+                className="px-4 px-md-5 py-4 text-white"
+                style={{ backgroundColor: 'var(--cui-primary)' }}
+              >
+                <div className="d-flex align-items-center gap-3">
+                  <div
+                    className="d-flex align-items-center justify-content-center rounded-circle"
+                    style={{
+                      width: '56px',
+                      height: '56px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                    }}
+                  >
+                    <CIcon icon={cilGift} size="xl" />
+                  </div>
+                  <div>
+                    <h1 className="mb-1 fw-bold fs-2">Share an Offer</h1>
+                    <p className="mb-0 opacity-75">
+                      Describe the skill or service you want to exchange with the community
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Form Section */}
+              <div className="p-4 p-md-5">
+                {serverError && (
+                  <CAlert color="danger" className="mb-4 border-0 shadow-sm">
+                    {serverError}
+                  </CAlert>
+                )}
+                {successMessage && (
+                  <CAlert color="success" className="mb-4 border-0 shadow-sm">
+                    {successMessage}
+                  </CAlert>
+                )}
+
+                <CForm onSubmit={handleSubmit} noValidate>
+                  {/* Title Field */}
+                  <div className="mb-4">
+                    <label className="form-label fw-semibold mb-2 fs-6">
+                      <CIcon icon={cilShortText} className="me-2 text-primary" />
+                      Offer Title
+                    </label>
+                    <CFormInput
+                      name="title"
+                      placeholder="e.g., Guitar Lessons, Web Design Help, Math Tutoring"
+                      autoComplete="off"
+                      value={formValues.title}
+                      invalid={Boolean(errors.title)}
+                      onChange={handleChange}
+                      size="lg"
+                      className="py-3"
+                    />
+                    <CFormFeedback invalid>{errors.title}</CFormFeedback>
+                  </div>
+
+                  {/* Skill Category Field */}
+                  <div className="mb-4">
+                    <label className="form-label fw-semibold mb-2 fs-6">
+                      <CIcon icon={cilLayers} className="me-2 text-primary" />
+                      Skill Category
+                    </label>
+                    <CFormSelect
+                      name="skillId"
+                      value={formValues.skillId}
+                      invalid={Boolean(errors.skillId)}
+                      onChange={handleChange}
+                      disabled={isLoadingSkills || Boolean(skillsError)}
+                      size="lg"
+                      className="py-3"
+                    >
+                      <option value="">Select a skill category...</option>
+                      {groupSkillsByCategory(skills).map((group) => (
+                        <optgroup key={group.category} label={group.category}>
+                          {group.items.map((skill) => (
+                            <option key={skill.id} value={skill.id}>
+                              {skill.name}
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </CFormSelect>
+                    <CFormFeedback invalid>{errors.skillId}</CFormFeedback>
                     {skillsError && (
-                      <CAlert color="warning" className="mb-3">
+                      <CAlert color="warning" className="mt-3 mb-0">
                         {skillsError}
                       </CAlert>
                     )}
-                    <CInputGroup className="mb-3">
-                      <CInputGroupText>
-                        <CIcon icon={cilList} />
-                      </CInputGroupText>
-                      <CFormTextarea
-                        name="description"
-                        placeholder="Describe what you are offering"
-                        value={formValues.description}
-                        invalid={Boolean(errors.description)}
-                        rows={4}
-                        onChange={handleChange}
-                      />
-                      <CFormFeedback invalid>{errors.description}</CFormFeedback>
-                    </CInputGroup>
-                    <CInputGroup className="mb-4">
-                      <CInputGroupText>Notes</CInputGroupText>
-                      <CFormTextarea
-                        name="extraDetails"
-                        placeholder="Availability, expectations, or anything helpful (optional)"
-                        value={formValues.extraDetails}
-                        rows={3}
-                        onChange={handleChange}
-                      />
-                    </CInputGroup>
-                    <div className="d-grid">
-                      <CButton color="primary" type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? (
-                          <>
-                            <CSpinner size="sm" className="me-2" />
-                            Publishing...
-                          </>
-                        ) : (
-                          'Post Offer'
-                        )}
-                      </CButton>
-                    </div>
-                  </CForm>
-                </CCardBody>
-              </CCard>
-            </CCardGroup>
+                  </div>
+
+                  {/* Description Field */}
+                  <div className="mb-4">
+                    <label className="form-label fw-semibold mb-2 fs-6">
+                      <CIcon icon={cilList} className="me-2 text-primary" />
+                      Description
+                    </label>
+                    <CFormTextarea
+                      name="description"
+                      placeholder="Describe what you are offering in detail. Include your experience level, what you can help with, and any relevant background information..."
+                      value={formValues.description}
+                      invalid={Boolean(errors.description)}
+                      rows={6}
+                      onChange={handleChange}
+                      className="py-3"
+                      style={{ fontSize: '1rem', lineHeight: '1.6' }}
+                    />
+                    <CFormFeedback invalid>{errors.description}</CFormFeedback>
+                  </div>
+
+                  {/* Additional Notes Field */}
+                  <div className="mb-5">
+                    <label className="form-label fw-semibold mb-2 fs-6">
+                      <CIcon icon={cilNotes} className="me-2 text-primary" />
+                      Additional Notes
+                      <span className="text-body-secondary fw-normal ms-2">(Optional)</span>
+                    </label>
+                    <CFormTextarea
+                      name="extraDetails"
+                      placeholder="Availability, expectations, preferred communication method, or any other helpful information..."
+                      value={formValues.extraDetails}
+                      rows={4}
+                      onChange={handleChange}
+                      className="py-3 bg-body-secondary"
+                      style={{ fontSize: '1rem', lineHeight: '1.6' }}
+                    />
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="d-grid">
+                    <CButton
+                      color="primary"
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="py-3 fw-bold fs-5"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <CSpinner size="sm" className="me-2" />
+                          Publishing Your Offer...
+                        </>
+                      ) : (
+                        <>
+                          <CIcon icon={cilGift} className="me-2" />
+                          Post Your Offer
+                        </>
+                      )}
+                    </CButton>
+                  </div>
+                </CForm>
+              </div>
+            </div>
           </CCol>
         </CRow>
       </CContainer>

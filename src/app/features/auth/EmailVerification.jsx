@@ -15,7 +15,10 @@ import { useAuth } from '../../contexts/AuthContext'
 
 const EmailVerification = () => {
   const [searchParams] = useSearchParams()
-  const token = searchParams.get('token')
+  const token = searchParams
+    .get('token')
+    ?.replace(/ /g, '+')
+    ?.replace(/[^A-Za-z0-9\-_+/=].*$/, '')
 
   const [isLoading, setIsLoading] = useState(true)
   const [isSuccess, setIsSuccess] = useState(false)
