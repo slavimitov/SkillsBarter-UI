@@ -1,4 +1,4 @@
-﻿import React from 'react'
+import React from 'react'
 import { CButton, CCard, CCardBody, CCardHeader, CPopover, CRow, CCol } from '@coreui/react'
 import { DocsComponents, DocsExample } from 'src/template/components'
 
@@ -34,7 +34,7 @@ const Popovers = () => {
           <CCardBody>
             <p className="text-body-secondary small">
               Four options are available: top, right, bottom, and left aligned. Directions are
-              mirrored when using CoreUI for React in RTL.
+              mirrored when using Skills Barter for React in RTL.
             </p>
             <DocsExample href="components/popover#four-directions">
               <CPopover

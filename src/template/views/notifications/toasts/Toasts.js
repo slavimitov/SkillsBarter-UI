@@ -1,4 +1,4 @@
-﻿import React, { useRef, useState } from 'react'
+import React, { useRef, useState } from 'react'
 import {
   CCard,
   CCardHeader,
@@ -31,7 +31,7 @@ const ExampleToast = () => {
         >
           <rect width="100%" height="100%" fill="#007aff"></rect>
         </svg>
-        <strong className="me-auto">CoreUI for React.js</strong>
+        <strong className="me-auto">Skills Barter</strong>
         <small>7 min ago</small>
       </CToastHeader>
       <CToastBody>Hello, world! This is a toast message.</CToastBody>
@@ -76,7 +76,7 @@ const Toasts = () => {
                   >
                     <rect width="100%" height="100%" fill="#007aff"></rect>
                   </svg>
-                  <strong className="me-auto">CoreUI for React.js</strong>
+                  <strong className="me-auto">Skills Barter</strong>
                   <small>7 min ago</small>
                 </CToastHeader>
                 <CToastBody>Hello, world! This is a toast message.</CToastBody>
@@ -109,7 +109,7 @@ const Toasts = () => {
                   >
                     <rect width="100%" height="100%" fill="#007aff"></rect>
                   </svg>
-                  <strong className="me-auto">CoreUI for React.js</strong>
+                  <strong className="me-auto">Skills Barter</strong>
                   <small>7 min ago</small>
                 </CToastHeader>
                 <CToastBody>Hello, world! This is a toast message.</CToastBody>
@@ -143,7 +143,7 @@ const Toasts = () => {
                     >
                       <rect width="100%" height="100%" fill="#007aff"></rect>
                     </svg>
-                    <strong className="me-auto">CoreUI for React.js</strong>
+                    <strong className="me-auto">Skills Barter</strong>
                     <small>7 min ago</small>
                   </CToastHeader>
                   <CToastBody>Hello, world! This is a toast message.</CToastBody>
@@ -161,7 +161,7 @@ const Toasts = () => {
                     >
                       <rect width="100%" height="100%" fill="#007aff"></rect>
                     </svg>
-                    <strong className="me-auto">CoreUI for React.js</strong>
+                    <strong className="me-auto">Skills Barter</strong>
                     <small>7 min ago</small>
                   </CToastHeader>
                   <CToastBody>Hello, world! This is a toast message.</CToastBody>
@@ -182,7 +182,7 @@ const Toasts = () => {
               <a href="https://coreui.io/docs/utilities/api">utilities</a>, or by adding your own
               markup. Here we&#39;ve created a simpler toast by removing the default{' '}
               <code>&lt;CToastHeader&gt;</code>, adding a custom hide icon from{' '}
-              <a href="https://coreui.io/icons/">CoreUI Icons</a>, and using some{' '}
+              <a href="https://coreui.io/icons/">icon pack</a>, and using some{' '}
               <a href="https://coreui.io/docs/utilities/flex">flexbox utilities</a> to adjust the
               layout.
             </p>

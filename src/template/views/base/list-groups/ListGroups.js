@@ -1,4 +1,4 @@
-﻿import React from 'react'
+import React from 'react'
 import {
   CBadge,
   CCard,
@@ -315,7 +315,7 @@ const ListGroups = () => {
           </CCardHeader>
           <CCardBody>
             <p className="text-body-secondary small">
-              Place CoreUI&#39;s checkboxes and radios within list group items and customize as
+              Place Skills Barter&#39;s checkboxes and radios within list group items and customize as
               needed.
             </p>
             <DocsExample href="components/list-group/#checkboxes-and-radios">

@@ -12,7 +12,7 @@ const DocsComponents = (props) => (
           src={ComponentsImg}
           width="160px"
           height="160px"
-          alt="CoreUI PRO hexagon"
+          alt="Skills Barter Components"
         />
       </div>
       <div className="col-md col-12 px-lg-4">

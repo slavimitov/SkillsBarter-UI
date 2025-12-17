@@ -1,17 +1,17 @@
 {
-  "name": "@coreui/coreui-free-react-admin-template",
+  "name": "skillsbarter-ui",
   "version": "5.5.0",
-  "description": "CoreUI Free React Admin Template",
+  "description": "Skills Barter UI",
   "homepage": ".",
   "bugs": {
-    "url": "https://github.com/coreui/coreui-free-react-admin-template/issues"
+    "url": "https://github.com/skillsbarter/skillsbarter-ui/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:coreui/coreui-free-react-admin-template.git"
+    "url": "git@github.com:skillsbarter/skillsbarter-ui.git"
   },
   "license": "MIT",
-  "author": "The CoreUI Team (https://github.com/orgs/coreui/people)",
+  "author": "Skills Barter Team",
   "scripts": {
     "build": "vite build",
     "lint": "eslint",
