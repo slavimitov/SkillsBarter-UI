@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   CCard,
@@ -24,16 +24,38 @@ import CIcon from '@coreui/icons-react'
 import { cilStar, cilCheckAlt } from '@coreui/icons'
 import httpClient from '../services/httpClient'
 import { useAuth } from '../contexts/AuthContext'
+import loadPayPalSdk from '../services/paypal'
 
 const Profile = () => {
   const navigate = useNavigate()
-  const { isAuthenticated, loading: authLoading } = useAuth()
+  const { isAuthenticated, loading: authLoading, refreshProfile } = useAuth()
+  const paypalButtonsRef = useRef(null)
 
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState(null)
+  const [paypalReady, setPaypalReady] = useState(false)
+  const [paypalError, setPaypalError] = useState(null)
+  const [paypalMessage, setPaypalMessage] = useState(null)
+  const [paypalLoading, setPaypalLoading] = useState(false)
+  const [activating, setActivating] = useState(false)
+
+  const resolveEnv = (key) => {
+    if (typeof import.meta !== 'undefined' && import.meta.env && key in import.meta.env) {
+      return import.meta.env[key]
+    }
+    if (typeof process !== 'undefined' && process.env && key in process.env) {
+      return process.env[key]
+    }
+    return undefined
+  }
+
+  const paypalClientId =
+    resolveEnv('VITE_PAYPAL_CLIENT_ID') || resolveEnv('REACT_APP_PAYPAL_CLIENT_ID')
+  const paypalPlanId = resolveEnv('VITE_PAYPAL_PLAN_ID') || resolveEnv('REACT_APP_PAYPAL_PLAN_ID')
+  const missingPaypalConfig = !paypalClientId || !paypalPlanId
 
   // Fetch user profile on component mount
   useEffect(() => {
@@ -64,6 +86,140 @@ const Profile = () => {
 
     fetchProfile()
   }, [authLoading, isAuthenticated])
+
+  const reloadProfile = useCallback(async () => {
+    const response = await httpClient.get('/users/profile')
+    setProfile(response.data.profile)
+    setFormData(response.data.profile)
+  }, [])
+
+  const isPremium = profile?.roles?.includes('Premium') || profile?.isPremium
+
+  useEffect(() => {
+    if (isPremium || missingPaypalConfig) return
+
+    let cancelled = false
+    const initPaypal = async () => {
+      setPaypalLoading(true)
+      setPaypalError(null)
+      try {
+        await loadPayPalSdk({
+          clientId: paypalClientId,
+          components: 'buttons',
+          vault: true,
+          intent: 'subscription',
+        })
+        if (!cancelled) {
+          setPaypalReady(true)
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setPaypalError(err?.message || 'Failed to load PayPal')
+        }
+      } finally {
+        if (!cancelled) {
+          setPaypalLoading(false)
+        }
+      }
+    }
+
+    initPaypal()
+    return () => {
+      cancelled = true
+    }
+  }, [isPremium, missingPaypalConfig, paypalClientId])
+
+  const handleSubscriptionApproved = useCallback(
+    async (data) => {
+      setActivating(true)
+      setPaypalError(null)
+      setPaypalMessage(null)
+      try {
+        await httpClient.post('/users/premium', {
+          subscriptionId: data?.subscriptionID || data?.subscriptionId,
+        })
+        await refreshProfile()
+        await reloadProfile()
+        setPaypalMessage('Premium activated. Enjoy the new features!')
+      } catch (err) {
+        setPaypalError(err?.response?.data?.message || 'Failed to activate premium')
+      } finally {
+        setActivating(false)
+      }
+    },
+    [refreshProfile, reloadProfile],
+  )
+
+  useEffect(() => {
+    if (!paypalReady || !paypalButtonsRef.current || isPremium || missingPaypalConfig) return
+
+    let buttonsInstance = null
+    let isCancelled = false
+
+    const renderButtons = async () => {
+      try {
+        const paypal = await loadPayPalSdk({
+          clientId: paypalClientId,
+          components: 'buttons',
+          vault: true,
+          intent: 'subscription',
+        })
+        buttonsInstance = paypal.Buttons({
+          style: {
+            shape: 'rect',
+            color: 'gold',
+            layout: 'vertical',
+            label: 'subscribe',
+          },
+          createSubscription: (_, actions) => {
+            if (!paypalPlanId) {
+              setPaypalError('Missing PayPal plan id. Please configure it and retry.')
+              return null
+            }
+            return actions.subscription.create({
+              plan_id: paypalPlanId,
+            })
+          },
+          onApprove: async (data) => {
+            await handleSubscriptionApproved(data)
+          },
+          onCancel: () => {
+            setPaypalMessage('Payment was cancelled. You can try again anytime.')
+          },
+          onError: (err) => {
+            setPaypalError(err?.message || 'Payment failed. Please try again.')
+          },
+        })
+
+        if (!isCancelled) {
+          await buttonsInstance.render(paypalButtonsRef.current)
+        }
+      } catch (err) {
+        if (!isCancelled) {
+          setPaypalError(err?.message || 'Unable to initialize PayPal buttons')
+        }
+      }
+    }
+
+    renderButtons()
+
+    return () => {
+      isCancelled = true
+      if (buttonsInstance?.close) {
+        buttonsInstance.close()
+      }
+      if (paypalButtonsRef.current) {
+        paypalButtonsRef.current.innerHTML = ''
+      }
+    }
+  }, [
+    handleSubscriptionApproved,
+    isPremium,
+    missingPaypalConfig,
+    paypalClientId,
+    paypalPlanId,
+    paypalReady,
+  ])
 
   if (authLoading) {
     return (
@@ -179,6 +335,55 @@ const Profile = () => {
                 Update your profile information below
               </CAlert>
             )}
+
+            <div className="mb-4">
+              <h5 className="mb-3">Premium</h5>
+              {isPremium ? (
+                <CAlert color="success" className="mb-3 d-flex align-items-center">
+                  <CIcon icon={cilCheckAlt} className="me-2" />
+                  You already have Premium access.
+                </CAlert>
+              ) : (
+                <>
+                  {paypalMessage && (
+                    <CAlert color="success" className="mb-3">
+                      {paypalMessage}
+                    </CAlert>
+                  )}
+                  {paypalError && (
+                    <CAlert color="danger" className="mb-3">
+                      {paypalError}
+                    </CAlert>
+                  )}
+                  {missingPaypalConfig && (
+                    <CAlert color="warning" className="mb-3">
+                      PayPal is not configured. Set REACT_APP_PAYPAL_CLIENT_ID and
+                      REACT_APP_PAYPAL_PLAN_ID to enable upgrades.
+                    </CAlert>
+                  )}
+                  {!missingPaypalConfig && (
+                    <>
+                      <CCardText className="mb-3">
+                        Unlock Premium to access advanced features and priority placement.
+                      </CCardText>
+                      {paypalLoading && (
+                        <div className="d-flex align-items-center mb-3">
+                          <CSpinner size="sm" className="me-2" />
+                          <span>Preparing payment options...</span>
+                        </div>
+                      )}
+                      <div ref={paypalButtonsRef} className="mb-2" />
+                      {activating && (
+                        <div className="d-flex align-items-center">
+                          <CSpinner size="sm" className="me-2" />
+                          <span>Activating your premium...</span>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+            </div>
 
             <CForm>
               {/* Personal Information */}
