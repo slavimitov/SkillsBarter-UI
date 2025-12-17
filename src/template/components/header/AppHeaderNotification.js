@@ -64,6 +64,20 @@ const AppHeaderNotification = () => {
             }
         }
 
+        const type = notification.type;
+        const entityId = notification.relatedEntityId;
+
+        if (type?.startsWith('proposal_') && entityId) {
+            navigate('/proposals');
+        } else if (type?.startsWith('agreement_') && entityId) {
+            navigate(`/agreements/${entityId}`);
+        } else if (type === 'deliverable_submitted' || type === 'deliverable_approved' || type === 'revision_requested') {
+            if (entityId) navigate(`/agreements/${entityId}`);
+        } else if (type?.startsWith('dispute_') && entityId) {
+            navigate(`/agreements/${entityId}`);
+        } else if (type === 'review_received') {
+            navigate('/profile');
+        }
     }
 
     return (

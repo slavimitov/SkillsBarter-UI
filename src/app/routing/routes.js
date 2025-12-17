@@ -17,6 +17,8 @@ const EmailVerification = React.lazy(() => import('../features/auth/EmailVerific
 const OAuthCallback = React.lazy(() => import('../features/auth/OAuthCallback'))
 const OAuthProfileCompletion = React.lazy(() => import('../features/auth/OAuthProfileCompletion'))
 const RequestOffer = React.lazy(() => import('../pages/RequestOffer'))
+const Proposals = React.lazy(() => import('../pages/Proposals'))
+const AgreementDetails = React.lazy(() => import('../pages/AgreementDetails'))
 
 const routes = [
   { path: '/', name: 'Home', element: Home },
@@ -24,6 +26,8 @@ const routes = [
   { path: '/offers/new', name: 'New Offer', element: CreateOffer, protected: true },
   { path: '/offers/:id', name: 'Offer Details', element: OfferDetails },
   { path: '/offers/:id/request', name: 'Request Offer', element: RequestOffer, protected: true },
+  { path: '/proposals', name: 'Proposals', element: Proposals, protected: true },
+  { path: '/agreements/:id', name: 'Agreement Details', element: AgreementDetails, protected: true },
   { path: '/messages', name: 'Messages', element: Messages, protected: true },
   { path: '/messages/:threadId', name: 'Message Thread', element: MessageThread, protected: true },
   { path: '/profile', name: 'Profile', element: Profile, protected: true },
