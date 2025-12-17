@@ -18,7 +18,6 @@ import {
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import {
-  cilBell,
   cilContrast,
   cilEnvelopeOpen,
   cilList,
@@ -29,6 +28,7 @@ import {
 
 import { AppBreadcrumb } from './index'
 import { AppHeaderDropdown } from './header/index'
+import AppHeaderNotification from './header/AppHeaderNotification'
 
 import { useAuth } from '../../app/contexts/AuthContext'
 
@@ -116,7 +116,7 @@ const AppHeader = ({ routes = [] }) => {
                     {capsule.label}
                   </CBadge>
                 )}
-                <CIcon icon={cilBell} size="lg" />
+                <AppHeaderNotification />
               </span>
             </CNavLink>
           </CNavItem>
