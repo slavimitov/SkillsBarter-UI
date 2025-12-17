@@ -1,4 +1,4 @@
-﻿import React from 'react'
+import React from 'react'
 import {
   CCard,
   CCardBody,
@@ -26,8 +26,8 @@ const Tables = () => {
           </CCardHeader>
           <CCardBody>
             <p className="text-body-secondary small">
-              Using the most basic table CoreUI, here&#39;s how <code>&lt;CTable&gt;</code>-based
-              tables look in CoreUI.
+              Using the most basic table markup, here&#39;s how <code>&lt;CTable&gt;</code>-based
+              tables look in Skills Barter.
             </p>
             <DocsExample href="components/table">
               <CTable>

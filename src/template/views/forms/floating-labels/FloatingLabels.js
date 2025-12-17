@@ -1,4 +1,4 @@
-﻿import React from 'react'
+import React from 'react'
 import {
   CCard,
   CCardBody,
@@ -132,8 +132,8 @@ const FloatingLabels = () => {
           </CCardHeader>
           <CCardBody>
             <p className="text-body-secondary small">
-              When working with the CoreUI for Bootstrap grid system, be sure to place form elements
-              within column classes.
+              When working with the Skills Barter Bootstrap grid system, be sure to place form
+              elements within column classes.
             </p>
             <DocsExample href="forms/floating-labels#layout">
               <CRow xs={{ gutter: 2 }}>

@@ -32,16 +32,35 @@ export const loadPayPalSdk = ({
   }
 
   paypalPromise = new Promise((resolve, reject) => {
+    const fail = (message) => {
+      const existing = typeof document !== 'undefined' && document.getElementById(PAYPAL_SCRIPT_ID)
+      if (existing) {
+        existing.remove()
+      }
+      paypalPromise = null
+      reject(new Error(message))
+    }
+
+    if (window.paypal) {
+      resolve(window.paypal)
+      return
+    }
+
     const existingScript = document.getElementById(PAYPAL_SCRIPT_ID)
     if (existingScript) {
-      existingScript.addEventListener('load', () => {
+      const checkPayPal = () => {
         if (window.paypal) {
           resolve(window.paypal)
         } else {
-          reject(new Error('PayPal SDK failed to load'))
+          fail('PayPal SDK failed to load')
         }
-      })
-      existingScript.addEventListener('error', () => reject(new Error('Failed to load PayPal SDK')))
+      }
+      existingScript.addEventListener('load', checkPayPal)
+      existingScript.addEventListener('error', () => fail('Failed to load PayPal SDK'))
+      
+      if (existingScript.readyState === 'complete' || existingScript.readyState === 'loaded') {
+        checkPayPal()
+      }
       return
     }
 
@@ -54,10 +73,10 @@ export const loadPayPalSdk = ({
       if (window.paypal) {
         resolve(window.paypal)
       } else {
-        reject(new Error('PayPal SDK failed to load'))
+        fail('PayPal SDK failed to load')
       }
     }
-    script.onerror = () => reject(new Error('Failed to load PayPal SDK'))
+    script.onerror = () => fail('Failed to load PayPal SDK')
     document.body.appendChild(script)
   })
 

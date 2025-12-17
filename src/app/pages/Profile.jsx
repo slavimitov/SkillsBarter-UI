@@ -24,7 +24,7 @@ import CIcon from '@coreui/icons-react'
 import { cilStar, cilCheckAlt } from '@coreui/icons'
 import httpClient from '../services/httpClient'
 import { useAuth } from '../contexts/AuthContext'
-import loadPayPalSdk from '../services/paypal'
+import loadPayPalSdk, { resetPayPalLoader } from '../services/paypal'
 
 const Profile = () => {
   const navigate = useNavigate()
@@ -41,6 +41,13 @@ const Profile = () => {
   const [paypalMessage, setPaypalMessage] = useState(null)
   const [paypalLoading, setPaypalLoading] = useState(false)
   const [activating, setActivating] = useState(false)
+  const [paypalContainerReady, setPaypalContainerReady] = useState(false)
+
+  // Callback ref to detect when the PayPal container is mounted
+  const paypalContainerRef = useCallback((node) => {
+    paypalButtonsRef.current = node
+    setPaypalContainerReady(!!node)
+  }, [])
 
   const resolveEnv = (key) => {
     if (typeof import.meta !== 'undefined' && import.meta.env && key in import.meta.env) {
@@ -151,7 +158,7 @@ const Profile = () => {
   )
 
   useEffect(() => {
-    if (!paypalReady || !paypalButtonsRef.current || isPremium || missingPaypalConfig) return
+    if (!paypalReady || !paypalContainerReady || !paypalButtonsRef.current || isPremium || missingPaypalConfig) return
 
     let buttonsInstance = null
     let isCancelled = false
@@ -164,6 +171,12 @@ const Profile = () => {
           vault: true,
           intent: 'subscription',
         })
+
+        // Clear the container before rendering
+        if (paypalButtonsRef.current) {
+          paypalButtonsRef.current.innerHTML = ''
+        }
+
         buttonsInstance = paypal.Buttons({
           style: {
             shape: 'rect',
@@ -191,12 +204,20 @@ const Profile = () => {
           },
         })
 
-        if (!isCancelled) {
-          await buttonsInstance.render(paypalButtonsRef.current)
+        if (!isCancelled && paypalButtonsRef.current) {
+          buttonsInstance.render(paypalButtonsRef.current).catch((err) => {
+            if (!isCancelled) {
+              console.error('PayPal render error:', err)
+              setPaypalError(err?.message || 'Unable to render PayPal buttons')
+            }
+          })
         }
       } catch (err) {
         if (!isCancelled) {
+          console.error('PayPal initialization error:', err)
           setPaypalError(err?.message || 'Unable to initialize PayPal buttons')
+          // If load failed, allow retry by resetting the loader cache
+          resetPayPalLoader()
         }
       }
     }
@@ -217,6 +238,7 @@ const Profile = () => {
     isPremium,
     missingPaypalConfig,
     paypalClientId,
+    paypalContainerReady,
     paypalPlanId,
     paypalReady,
   ])
@@ -372,7 +394,7 @@ const Profile = () => {
                           <span>Preparing payment options...</span>
                         </div>
                       )}
-                      <div ref={paypalButtonsRef} className="mb-2" />
+                      <div ref={paypalContainerRef} className="mb-2" />
                       {activating && (
                         <div className="d-flex align-items-center">
                           <CSpinner size="sm" className="me-2" />

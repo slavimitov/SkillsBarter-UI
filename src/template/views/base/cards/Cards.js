@@ -1,4 +1,4 @@
-﻿import React from 'react'
+import React from 'react'
 import {
   CButton,
   CCard,
@@ -36,7 +36,7 @@ const Cards = () => {
             <p className="text-body-secondary small">
               Cards are built with as little markup and styles as possible but still manage to
               deliver a bunch of control and customization. Built with flexbox, they offer easy
-              alignment and mix well with other CoreUI components. Cards have no top, left, and
+              alignment and mix well with other Skills Barter components. Cards have no top, left, and
               right margins by default, so use{' '}
               <a href="https://coreui.io/docs/utilities/spacing">spacing utilities</a> as needed.
               They have no fixed width to start, so they&#39;ll fill the full width of its parent.
