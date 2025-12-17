@@ -3,12 +3,21 @@ import { AppContent, AppSidebar, AppFooter, AppHeader } from '../components/inde
 import { useAuth } from '../../app/contexts/AuthContext'
 
 const DefaultLayout = ({ navigation = [], routes = [] }) => {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
 
   const sidebarItems = useMemo(() => {
-    if (!isAuthenticated) return navigation
-    return navigation.filter((item) => item?.to !== '/login' && item?.to !== '/register')
-  }, [isAuthenticated, navigation])
+    const hasAdminAccess = user?.roles?.some((role) => ['Admin', 'Moderator'].includes(role))
+
+    return navigation.filter((item) => {
+      if (isAuthenticated && (item?.to === '/login' || item?.to === '/register')) {
+        return false
+      }
+      if (item?.to === '/admin' && !hasAdminAccess) {
+        return false
+      }
+      return true
+    })
+  }, [isAuthenticated, user, navigation])
 
   return (
     <div>
