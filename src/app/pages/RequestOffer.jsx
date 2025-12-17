@@ -19,7 +19,7 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilPlus, cilTrash, cilArrowLeft } from '@coreui/icons'
 import httpClient from '../services/httpClient'
-import agreementService from '../services/agreementService'
+import proposalService from '../services/proposalService'
 import { useAuth } from '../contexts/AuthContext'
 
 const RequestOffer = () => {
@@ -80,31 +80,28 @@ const RequestOffer = () => {
         try {
             if (!offer) return
 
+            const milestonesText = formData.milestones
+                .map((m, i) => `Milestone ${i + 1}: ${m.title} (${m.durationInDays} days)${m.dueAt ? ' - Due: ' + m.dueAt : ''}`)
+                .join('\n');
+
+            const fullTerms = `${formData.terms}\n\nProposed Milestones:\n${milestonesText}`;
+
             const payload = {
                 offerId: offer.id,
-                requesterId: user.id,
-                providerId: offer.owner?.id || offer.userId || offer.ownerId, // Adjust based on your offer model
-                terms: formData.terms,
-                milestones: formData.milestones.map(m => ({
-                    title: m.title,
-                    durationInDays: parseInt(m.durationInDays) || 0, // Ensure integer
-                    dueAt: m.dueAt ? new Date(m.dueAt).toISOString() : null
-                }))
+                terms: fullTerms,
+                proposerOffer: "I will complete the work as described in the terms.", 
+                deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
             }
 
-            // Basic validation
-            if (!payload.providerId) {
-                throw new Error("Could not determine provider ID from offer.");
-            }
-            if (payload.milestones.some(m => !m.title)) {
-                throw new Error("All milestones must have a title.");
-            }
-
-            await agreementService.createAgreement(payload)
-            navigate('/offers') // Or redirect to specific agreement page if/when available
+            await proposalService.createProposal(payload)
+            navigate('/proposals')
         } catch (err) {
             console.error(err)
-            setError(err.response?.data?.message || err.message || 'Failed to create agreement.')
+            const msg = err.response?.data?.message
+                || (err.response?.data?.errors ? Object.values(err.response.data.errors).join(', ') : null)
+                || err.message
+                || 'Failed to create proposal.'
+            setError(msg)
         } finally {
             setSubmitting(false)
         }

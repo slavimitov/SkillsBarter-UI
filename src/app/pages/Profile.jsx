@@ -19,6 +19,7 @@ import {
   CAvatar,
   CProgress,
   CSpinner,
+  useColorModes,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilStar, cilCheckAlt } from '@coreui/icons'
@@ -29,6 +30,7 @@ import loadPayPalSdk, { resetPayPalLoader } from '../services/paypal'
 const Profile = () => {
   const navigate = useNavigate()
   const { isAuthenticated, loading: authLoading, refreshProfile } = useAuth()
+  const { colorMode } = useColorModes('coreui-free-react-admin-template-theme')
   const paypalButtonsRef = useRef(null)
 
   const [profile, setProfile] = useState(null)
@@ -43,7 +45,6 @@ const Profile = () => {
   const [activating, setActivating] = useState(false)
   const [paypalContainerReady, setPaypalContainerReady] = useState(false)
 
-  // Callback ref to detect when the PayPal container is mounted
   const paypalContainerRef = useCallback((node) => {
     paypalButtonsRef.current = node
     setPaypalContainerReady(!!node)
@@ -64,7 +65,6 @@ const Profile = () => {
   const paypalPlanId = resolveEnv('VITE_PAYPAL_PLAN_ID') || resolveEnv('REACT_APP_PAYPAL_PLAN_ID')
   const missingPaypalConfig = !paypalClientId || !paypalPlanId
 
-  // Fetch user profile on component mount
   useEffect(() => {
     if (authLoading) return
     if (!isAuthenticated) {
@@ -79,7 +79,6 @@ const Profile = () => {
       try {
         setLoading(true)
         setError(null)
-        // Adjust endpoint based on your backend
         const response = await httpClient.get('/users/profile')
         setProfile(response.data.profile)
         setFormData(response.data.profile)
@@ -172,7 +171,6 @@ const Profile = () => {
           intent: 'subscription',
         })
 
-        // Clear the container before rendering
         if (paypalButtonsRef.current) {
           paypalButtonsRef.current.innerHTML = ''
         }
@@ -216,7 +214,6 @@ const Profile = () => {
         if (!isCancelled) {
           console.error('PayPal initialization error:', err)
           setPaypalError(err?.message || 'Unable to initialize PayPal buttons')
-          // If load failed, allow retry by resetting the loader cache
           resetPayPalLoader()
         }
       }
@@ -307,7 +304,6 @@ const Profile = () => {
 
   const handleSave = async () => {
     try {
-      // Prepare data for backend - convert skills array to skillIds
       const updateData = {
         name: formData.name,
         description: formData.description,
@@ -315,10 +311,8 @@ const Profile = () => {
         skillIds: formData.skills?.map(skill => skill.skillId).filter(id => id) || []
       }
       
-      // Send update to backend
       const response = await httpClient.put('/users/profile', updateData)
       
-      // Update local profile with response data
       setProfile(response.data.profile)
       setFormData(response.data.profile)
       setIsEditing(false)
@@ -360,51 +354,65 @@ const Profile = () => {
 
             <div className="mb-4">
               <h5 className="mb-3">Premium</h5>
-              {isPremium ? (
-                <CAlert color="success" className="mb-3 d-flex align-items-center">
-                  <CIcon icon={cilCheckAlt} className="me-2" />
-                  You already have Premium access.
-                </CAlert>
-              ) : (
-                <>
-                  {paypalMessage && (
-                    <CAlert color="success" className="mb-3">
-                      {paypalMessage}
+              <div className="d-flex">
+                <div
+                  className="p-4 rounded-3"
+                  style={{
+                    width: '100%',
+                    maxWidth: '420px',
+                    minWidth: '320px',
+                    backgroundColor: 'var(--cui-body-bg)',
+                    border: '1px solid var(--cui-border-color)',
+                    boxShadow: 'var(--cui-box-shadow-sm)',
+                  }}
+                >
+                  {isPremium ? (
+                    <CAlert color="success" className="mb-0 d-flex align-items-center">
+                      <CIcon icon={cilCheckAlt} className="me-2" />
+                      You already have Premium access.
                     </CAlert>
-                  )}
-                  {paypalError && (
-                    <CAlert color="danger" className="mb-3">
-                      {paypalError}
-                    </CAlert>
-                  )}
-                  {missingPaypalConfig && (
-                    <CAlert color="warning" className="mb-3">
-                      PayPal is not configured. Set REACT_APP_PAYPAL_CLIENT_ID and
-                      REACT_APP_PAYPAL_PLAN_ID to enable upgrades.
-                    </CAlert>
-                  )}
-                  {!missingPaypalConfig && (
+                  ) : (
                     <>
-                      <CCardText className="mb-3">
-                        Unlock Premium to access advanced features and priority placement.
-                      </CCardText>
-                      {paypalLoading && (
-                        <div className="d-flex align-items-center mb-3">
-                          <CSpinner size="sm" className="me-2" />
-                          <span>Preparing payment options...</span>
-                        </div>
+                      {paypalMessage && (
+                        <CAlert color="success" className="mb-3">
+                          {paypalMessage}
+                        </CAlert>
                       )}
-                      <div ref={paypalContainerRef} className="mb-2" />
-                      {activating && (
-                        <div className="d-flex align-items-center">
-                          <CSpinner size="sm" className="me-2" />
-                          <span>Activating your premium...</span>
-                        </div>
+                      {paypalError && (
+                        <CAlert color="danger" className="mb-3">
+                          {paypalError}
+                        </CAlert>
+                      )}
+                      {missingPaypalConfig && (
+                        <CAlert color="warning" className="mb-0">
+                          PayPal is not configured. Set REACT_APP_PAYPAL_CLIENT_ID and
+                          REACT_APP_PAYPAL_PLAN_ID to enable upgrades.
+                        </CAlert>
+                      )}
+                      {!missingPaypalConfig && (
+                        <>
+                          <CCardText className="mb-3">
+                            Unlock Premium to access advanced features and priority placement.
+                          </CCardText>
+                          {paypalLoading && (
+                            <div className="d-flex align-items-center mb-3">
+                              <CSpinner size="sm" className="me-2" />
+                              <span>Preparing payment options...</span>
+                            </div>
+                          )}
+                          <div ref={paypalContainerRef} className="mb-0" />
+                          {activating && (
+                            <div className="d-flex align-items-center mt-3">
+                              <CSpinner size="sm" className="me-2" />
+                              <span>Activating your premium...</span>
+                            </div>
+                          )}
+                        </>
                       )}
                     </>
                   )}
-                </>
-              )}
+                </div>
+              </div>
             </div>
 
             <CForm>
