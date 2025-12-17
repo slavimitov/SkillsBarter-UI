@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   CCard,
   CCardBody,
@@ -22,8 +23,12 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilStar, cilCheckAlt } from '@coreui/icons'
 import httpClient from '../services/httpClient'
+import { useAuth } from '../contexts/AuthContext'
 
 const Profile = () => {
+  const navigate = useNavigate()
+  const { isAuthenticated, loading: authLoading } = useAuth()
+
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -32,6 +37,15 @@ const Profile = () => {
 
   // Fetch user profile on component mount
   useEffect(() => {
+    if (authLoading) return
+    if (!isAuthenticated) {
+      setProfile(null)
+      setFormData(null)
+      setError(null)
+      setLoading(false)
+      return
+    }
+
     const fetchProfile = async () => {
       try {
         setLoading(true)
@@ -49,7 +63,33 @@ const Profile = () => {
     }
 
     fetchProfile()
-  }, [])
+  }, [authLoading, isAuthenticated])
+
+  if (authLoading) {
+    return (
+      <CRow className="justify-content-center align-items-center" style={{ minHeight: '50vh' }}>
+        <CCol className="text-center">
+          <CSpinner color="primary" />
+          <p className="mt-3">Loading...</p>
+        </CCol>
+      </CRow>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <CRow className="justify-content-center align-items-center" style={{ minHeight: '50vh' }}>
+        <CCol className="text-center">
+          <CAlert color="info" className="mb-4">
+            Please log in to view your profile.
+          </CAlert>
+          <CButton color="primary" onClick={() => navigate('/login')}>
+            Login
+          </CButton>
+        </CCol>
+      </CRow>
+    )
+  }
 
   if (loading) {
     return (
@@ -89,10 +129,22 @@ const Profile = () => {
 
   const handleSave = async () => {
     try {
+      // Prepare data for backend - convert skills array to skillIds
+      const updateData = {
+        name: formData.name,
+        description: formData.description,
+        phoneNumber: formData.phoneNumber,
+        skillIds: formData.skills?.map(skill => skill.skillId).filter(id => id) || []
+      }
+      
       // Send update to backend
-      await httpClient.put('/users/profile', formData)
-      setProfile(formData)
+      const response = await httpClient.put('/users/profile', updateData)
+      
+      // Update local profile with response data
+      setProfile(response.data.profile)
+      setFormData(response.data.profile)
       setIsEditing(false)
+      setError(null)
     } catch (err) {
       console.error('Error saving profile:', err)
       setError(err.response?.data?.message || 'Failed to save profile')
@@ -102,16 +154,6 @@ const Profile = () => {
   const handleCancel = () => {
     setFormData(profile)
     setIsEditing(false)
-  }
-
-  const handleSkillChange = (e, index) => {
-    const newSkills = [...formData.skills]
-    newSkills[index] = e.target.value
-    setFormData({ ...formData, skills: newSkills })
-  }
-
-  const addSkill = () => {
-    setFormData({ ...formData, skills: [...formData.skills, ''] })
   }
 
   const removeSkill = (index) => {
@@ -170,12 +212,12 @@ const Profile = () => {
                 </CRow>
                 <CRow>
                   <CCol md={6} className="mb-3">
-                    <CFormLabel htmlFor="phone">Phone</CFormLabel>
+                    <CFormLabel htmlFor="phoneNumber">Phone</CFormLabel>
                     <CFormInput
                       type="tel"
-                      id="phone"
-                      name="phone"
-                      value={formData.phone}
+                      id="phoneNumber"
+                      name="phoneNumber"
+                      value={formData.phoneNumber || ''}
                       onChange={handleInputChange}
                       disabled={!isEditing}
                       placeholder="Your phone number"
@@ -187,11 +229,11 @@ const Profile = () => {
               {/* Bio */}
               <div className="mb-4">
                 <h5 className="mb-3">Bio / Description</h5>
-                <CFormLabel htmlFor="bio">Tell us about yourself</CFormLabel>
+                <CFormLabel htmlFor="description">Tell us about yourself</CFormLabel>
                 <CFormTextarea
-                  id="bio"
-                  name="bio"
-                  value={formData.bio}
+                  id="description"
+                  name="description"
+                  value={formData.description || ''}
                   onChange={handleInputChange}
                   disabled={!isEditing}
                   rows={4}
@@ -203,42 +245,31 @@ const Profile = () => {
               <div className="mb-4">
                 <div className="d-flex justify-content-between align-items-center mb-3">
                   <h5 className="m-0">Skills List</h5>
-                  {isEditing && (
-                    <CButton color="success" size="sm" onClick={addSkill}>
-                      + Add Skill
-                    </CButton>
-                  )}
                 </div>
-                <CListGroup>
-                  {formData.skills.map((skill, index) => (
-                    <CListGroupItem
-                      key={index}
-                      className="d-flex justify-content-between align-items-center"
-                    >
-                      {isEditing ? (
-                        <CFormInput
-                          type="text"
-                          value={skill}
-                          onChange={(e) => handleSkillChange(e, index)}
-                          placeholder="Skill name"
-                          className="me-2"
-                        />
-                      ) : (
-                        <span>{skill}</span>
-                      )}
-                      {isEditing && (
-                        <CButton
-                          color="danger"
-                          size="sm"
-                          onClick={() => removeSkill(index)}
-                          className="ms-2"
-                        >
-                          Remove
-                        </CButton>
-                      )}
-                    </CListGroupItem>
-                  ))}
-                </CListGroup>
+                {formData.skills && formData.skills.length > 0 ? (
+                  <CListGroup>
+                    {formData.skills.map((skill, index) => (
+                      <CListGroupItem
+                        key={skill.skillId || index}
+                        className="d-flex justify-content-between align-items-center"
+                      >
+                        <span>{skill.skillName || skill}</span>
+                        {isEditing && (
+                          <CButton
+                            color="danger"
+                            size="sm"
+                            onClick={() => removeSkill(index)}
+                            className="ms-2"
+                          >
+                            Remove
+                          </CButton>
+                        )}
+                      </CListGroupItem>
+                    ))}
+                  </CListGroup>
+                ) : (
+                  <CCardText className="text-muted">No skills added yet</CCardText>
+                )}
               </div>
 
               {/* Reputation */}
@@ -251,15 +282,15 @@ const Profile = () => {
                         <CIcon icon={cilStar} size="xl" className="text-warning" />
                       </div>
                       <div>
-                        <div className="fw-bold">{profile.rating} / 5.0</div>
+                        <div className="fw-bold">{profile.stats?.averageRating || 0} / 5.0</div>
                         <CCardText className="m-0 text-muted">
-                          {profile.reviewCount} reviews
+                          {profile.stats?.totalReviews || 0} reviews
                         </CCardText>
                       </div>
                     </div>
                   </CCol>
                   <CCol md={6} className="mb-3">
-                    <CProgress color="warning" value={profile.rating * 20} className="mt-2" />
+                    <CProgress color="warning" value={(profile.stats?.averageRating || 0) * 20} className="mt-2" />
                   </CCol>
                 </CRow>
               </div>
