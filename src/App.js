@@ -15,7 +15,6 @@ import navigation from './app/navigation/nav'
 const DefaultLayout = React.lazy(() => import('./template/layouts/DefaultLayout'))
 const Page404 = React.lazy(() => import('./template/views/pages/page404/Page404'))
 const Page500 = React.lazy(() => import('./template/views/pages/page500/Page500'))
-
 const App = () => {
   const { isColorModeSet, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
   const storedTheme = useSelector((state) => state.theme)

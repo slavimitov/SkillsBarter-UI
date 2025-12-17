@@ -16,12 +16,14 @@ const ResetPassword = React.lazy(() => import('../features/auth/ResetPassword'))
 const EmailVerification = React.lazy(() => import('../features/auth/EmailVerification'))
 const OAuthCallback = React.lazy(() => import('../features/auth/OAuthCallback'))
 const OAuthProfileCompletion = React.lazy(() => import('../features/auth/OAuthProfileCompletion'))
+const RequestOffer = React.lazy(() => import('../pages/RequestOffer'))
 
 const routes = [
   { path: '/', name: 'Home', element: Home },
   { path: '/offers', name: 'Offers', element: Offers },
   { path: '/offers/new', name: 'New Offer', element: CreateOffer, protected: true },
   { path: '/offers/:id', name: 'Offer Details', element: OfferDetails },
+  { path: '/offers/:id/request', name: 'Request Offer', element: RequestOffer, protected: true },
   { path: '/messages', name: 'Messages', element: Messages, protected: true },
   { path: '/messages/:threadId', name: 'Message Thread', element: MessageThread, protected: true },
   { path: '/profile', name: 'Profile', element: Profile, protected: true },
