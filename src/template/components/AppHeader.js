@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import {
   CBadge,
+  CButton,
   CContainer,
   CDropdown,
   CDropdownItem,
@@ -58,12 +59,13 @@ const getRoleCapsule = (role) => {
 const AppHeader = ({ routes = [] }) => {
   const headerRef = useRef()
   const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
+  const navigate = useNavigate()
 
   const dispatch = useDispatch()
   const sidebarShow = useSelector((state) => state.sidebarShow)
 
-  const { user } = useAuth()
-  const capsule = getRoleCapsule(getPrimaryRole(user?.roles))
+  const { user, isAuthenticated } = useAuth()
+  const capsule = isAuthenticated ? getRoleCapsule(getPrimaryRole(user?.roles)) : null
 
   useEffect(() => {
     const handleScroll = () => {
@@ -176,7 +178,18 @@ const AppHeader = ({ routes = [] }) => {
           <li className="nav-item py-1">
             <div className="vr h-100 mx-2 text-body text-opacity-75"></div>
           </li>
-          <AppHeaderDropdown />
+          {isAuthenticated ? (
+            <AppHeaderDropdown />
+          ) : (
+            <CButton
+              color="primary"
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/login')}
+            >
+              Login
+            </CButton>
+          )}
         </CHeaderNav>
       </CContainer>
       <CContainer className="px-4" fluid>
