@@ -23,7 +23,10 @@ import { useAuth } from '../../contexts/AuthContext'
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams()
-  const token = searchParams.get('token')
+  const token = searchParams
+    .get('token')
+    ?.replace(/ /g, '+')
+    ?.replace(/[^A-Za-z0-9\-_+/=].*$/, '')
 
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
