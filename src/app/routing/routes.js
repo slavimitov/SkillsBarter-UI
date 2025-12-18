@@ -4,8 +4,6 @@ const Home = React.lazy(() => import('../pages/Home'))
 const Offers = React.lazy(() => import('../pages/Offers'))
 const CreateOffer = React.lazy(() => import('../pages/CreateOffer'))
 const OfferDetails = React.lazy(() => import('../pages/OfferDetails'))
-const Messages = React.lazy(() => import('../pages/Messages'))
-const MessageThread = React.lazy(() => import('../pages/MessageThread'))
 const Profile = React.lazy(() => import('../pages/Profile'))
 const UserProfile = React.lazy(() => import('../pages/UserProfile'))
 const Admin = React.lazy(() => import('../pages/Admin'))
@@ -18,6 +16,7 @@ const OAuthCallback = React.lazy(() => import('../features/auth/OAuthCallback'))
 const OAuthProfileCompletion = React.lazy(() => import('../features/auth/OAuthProfileCompletion'))
 const RequestOffer = React.lazy(() => import('../pages/RequestOffer'))
 const Proposals = React.lazy(() => import('../pages/Proposals'))
+const Agreements = React.lazy(() => import('../pages/Agreements'))
 const AgreementDetails = React.lazy(() => import('../pages/AgreementDetails'))
 
 const routes = [
@@ -27,9 +26,8 @@ const routes = [
   { path: '/offers/:id', name: 'Offer Details', element: OfferDetails },
   { path: '/offers/:id/request', name: 'Request Offer', element: RequestOffer, protected: true },
   { path: '/proposals', name: 'Proposals', element: Proposals, protected: true },
+  { path: '/agreements', name: 'Agreements', element: Agreements, protected: true },
   { path: '/agreements/:id', name: 'Agreement Details', element: AgreementDetails, protected: true },
-  { path: '/messages', name: 'Messages', element: Messages, protected: true },
-  { path: '/messages/:threadId', name: 'Message Thread', element: MessageThread, protected: true },
   { path: '/profile', name: 'Profile', element: Profile, protected: true },
   { path: '/users/:id', name: 'User Profile', element: UserProfile, protected: true },
   { path: '/admin', name: 'Admin', element: Admin, protected: true },

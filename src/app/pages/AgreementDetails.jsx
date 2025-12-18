@@ -13,9 +13,31 @@ import {
     CProgress,
     CListGroup,
     CListGroupItem,
+    CModal,
+    CModalHeader,
+    CModalTitle,
+    CModalBody,
+    CModalFooter,
+    CForm,
+    CFormLabel,
+    CFormInput,
+    CFormTextarea,
+    CTooltip,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilUser, cilCalendar, cilCheckCircle, cilTask } from '@coreui/icons'
+import {
+    cilUser,
+    cilCalendar,
+    cilCheckCircle,
+    cilTask,
+    cilCloudUpload,
+    cilThumbUp,
+    cilLoop,
+    cilExternalLink,
+    cilStar,
+    cilWarning,
+    cilClock,
+} from '@coreui/icons'
 import { useAuth } from '../contexts/AuthContext'
 import agreementService from '../services/agreementService'
 import deliverableService from '../services/deliverableService'
@@ -26,9 +48,22 @@ const AgreementDetails = () => {
     const { user } = useAuth()
 
     const [agreement, setAgreement] = useState(null)
-    const [deliverables, setDeliverables] = useState([])
+    const [deliverables, setDeliverables] = useState(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
+
+    const [submitModalVisible, setSubmitModalVisible] = useState(false)
+    const [submitForm, setSubmitForm] = useState({ link: '', description: '' })
+    const [submitLoading, setSubmitLoading] = useState(false)
+
+    const [revisionModalVisible, setRevisionModalVisible] = useState(false)
+    const [revisionReason, setRevisionReason] = useState('')
+    const [selectedDeliverableId, setSelectedDeliverableId] = useState(null)
+    const [revisionLoading, setRevisionLoading] = useState(false)
+
+    const [resubmitModalVisible, setResubmitModalVisible] = useState(false)
+    const [resubmitForm, setResubmitForm] = useState({ link: '', description: '' })
+    const [resubmitLoading, setResubmitLoading] = useState(false)
 
     useEffect(() => {
         if (id) {
@@ -45,9 +80,9 @@ const AgreementDetails = () => {
 
             try {
                 const delivData = await deliverableService.getAgreementDeliverables(id)
-                setDeliverables(delivData || [])
+                setDeliverables(delivData)
             } catch {
-                setDeliverables([])
+                setDeliverables(null)
             }
         } catch (err) {
             console.error('Error fetching agreement:', err)
@@ -68,15 +103,106 @@ const AgreementDetails = () => {
         }
     }
 
+    const handleSubmitDeliverable = async () => {
+        if (!submitForm.link || !submitForm.description) {
+            alert('Please fill in all fields')
+            return
+        }
+
+        try {
+            setSubmitLoading(true)
+            await deliverableService.submit({
+                agreementId: id,
+                link: submitForm.link,
+                description: submitForm.description,
+            })
+            setSubmitModalVisible(false)
+            setSubmitForm({ link: '', description: '' })
+            await fetchAgreement()
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to submit deliverable')
+        } finally {
+            setSubmitLoading(false)
+        }
+    }
+
+    const handleApprove = async (deliverableId) => {
+        if (!window.confirm('Approve this deliverable?')) return
+
+        try {
+            await deliverableService.approve(deliverableId)
+            await fetchAgreement()
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to approve deliverable')
+        }
+    }
+
+    const openRevisionModal = (deliverableId) => {
+        setSelectedDeliverableId(deliverableId)
+        setRevisionReason('')
+        setRevisionModalVisible(true)
+    }
+
+    const handleRequestRevision = async () => {
+        if (!revisionReason || revisionReason.length < 10) {
+            alert('Please provide a detailed reason (at least 10 characters)')
+            return
+        }
+
+        try {
+            setRevisionLoading(true)
+            await deliverableService.requestRevision(selectedDeliverableId, revisionReason)
+            setRevisionModalVisible(false)
+            setRevisionReason('')
+            await fetchAgreement()
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to request revision')
+        } finally {
+            setRevisionLoading(false)
+        }
+    }
+
+    const openResubmitModal = (deliverable) => {
+        setSelectedDeliverableId(deliverable.id)
+        setResubmitForm({
+            link: deliverable.link || '',
+            description: deliverable.description || '',
+        })
+        setResubmitModalVisible(true)
+    }
+
+    const handleResubmit = async () => {
+        if (!resubmitForm.link || !resubmitForm.description) {
+            alert('Please fill in all fields')
+            return
+        }
+
+        try {
+            setResubmitLoading(true)
+            await deliverableService.resubmit(selectedDeliverableId, {
+                agreementId: id,
+                link: resubmitForm.link,
+                description: resubmitForm.description,
+            })
+            setResubmitModalVisible(false)
+            setResubmitForm({ link: '', description: '' })
+            await fetchAgreement()
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to resubmit deliverable')
+        } finally {
+            setResubmitLoading(false)
+        }
+    }
+
     const getStatusBadge = (status) => {
         const statusMap = {
             0: { color: 'warning', label: 'Pending' },
-            1: { color: 'primary', label: 'Active' },
+            1: { color: 'primary', label: 'In Progress' },
             2: { color: 'success', label: 'Completed' },
             3: { color: 'danger', label: 'Cancelled' },
             4: { color: 'dark', label: 'Disputed' },
             'Pending': { color: 'warning', label: 'Pending' },
-            'Active': { color: 'primary', label: 'Active' },
+            'InProgress': { color: 'primary', label: 'In Progress' },
             'Completed': { color: 'success', label: 'Completed' },
             'Cancelled': { color: 'danger', label: 'Cancelled' },
             'Disputed': { color: 'dark', label: 'Disputed' },
@@ -98,10 +224,24 @@ const AgreementDetails = () => {
         return <CBadge color={info.color}>{info.label}</CBadge>
     }
 
+    const getDeliverableStatusBadge = (status) => {
+        const statusMap = {
+            0: { color: 'warning', label: 'Submitted' },
+            1: { color: 'success', label: 'Approved' },
+            2: { color: 'info', label: 'Revision Requested' },
+            'Submitted': { color: 'warning', label: 'Submitted' },
+            'Approved': { color: 'success', label: 'Approved' },
+            'RevisionRequested': { color: 'info', label: 'Revision Requested' },
+        }
+        const info = statusMap[status] || { color: 'secondary', label: status }
+        return <CBadge color={info.color}>{info.label}</CBadge>
+    }
+
     if (loading) {
         return (
             <div className="text-center p-5">
                 <CSpinner />
+                <p className="mt-2">Loading agreement...</p>
             </div>
         )
     }
@@ -131,28 +271,47 @@ const AgreementDetails = () => {
 
     const isRequester = user?.id === agreement.requesterId
     const isProvider = user?.id === agreement.providerId
-    const canComplete = (isRequester || isProvider) && (agreement.status === 1 || agreement.status === 'Active')
+    const isActive = agreement.status === 1 || agreement.status === 'InProgress'
+    const canComplete = (isRequester || isProvider) && isActive && deliverables?.bothApproved
 
     const completedMilestones = agreement.milestones?.filter(m => m.status === 2 || m.status === 'Completed').length || 0
     const totalMilestones = agreement.milestones?.length || 0
     const progressPercent = totalMilestones > 0 ? Math.round((completedMilestones / totalMilestones) * 100) : 0
 
+    const myDeliverable = isRequester
+        ? deliverables?.requesterDeliverable
+        : deliverables?.providerDeliverable
+    const otherDeliverable = isRequester
+        ? deliverables?.providerDeliverable
+        : deliverables?.requesterDeliverable
+
+    const canSubmitDeliverable = isActive && !myDeliverable
+
+    const myMilestones = agreement.milestones?.filter(m => m.responsibleUserId === user?.id) || []
+    const otherMilestones = agreement.milestones?.filter(m => m.responsibleUserId !== user?.id) || []
+
     return (
         <CRow>
             <CCol xs={12}>
+                {/* Main Agreement Info */}
                 <CCard className="mb-4">
                     <CCardHeader className="d-flex justify-content-between align-items-center">
                         <div>
                             <strong>Agreement Details</strong>
                             <span className="ms-2">{getStatusBadge(agreement.status)}</span>
+                            {isRequester && <CBadge color="info" className="ms-2">You are Requester</CBadge>}
+                            {isProvider && <CBadge color="success" className="ms-2">You are Provider</CBadge>}
                         </div>
-                        <div>
+                        <div className="d-flex gap-2">
                             {canComplete && (
                                 <CButton color="success" size="sm" onClick={handleComplete}>
                                     <CIcon icon={cilCheckCircle} className="me-1" />
                                     Mark Complete
                                 </CButton>
                             )}
+                            <CButton color="secondary" size="sm" variant="outline" onClick={() => navigate('/agreements')}>
+                                Back to Agreements
+                            </CButton>
                         </div>
                     </CCardHeader>
                     <CCardBody>
@@ -201,7 +360,7 @@ const AgreementDetails = () => {
                         {agreement.terms && (
                             <div className="mb-4">
                                 <h6>Terms</h6>
-                                <p className="bg-light p-3 rounded">{agreement.terms}</p>
+                                <p className="bg-body-secondary p-3 rounded">{agreement.terms}</p>
                             </div>
                         )}
 
@@ -242,30 +401,29 @@ const AgreementDetails = () => {
                     </CCardBody>
                 </CCard>
 
-                {/* Milestones */}
-                {agreement.milestones?.length > 0 && (
+                {/* Milestones - Your Responsibilities */}
+                {myMilestones.length > 0 && (
                     <CCard className="mb-4">
-                        <CCardHeader>
+                        <CCardHeader className="bg-primary text-white">
                             <div className="d-flex justify-content-between align-items-center">
                                 <strong>
                                     <CIcon icon={cilTask} className="me-2" />
-                                    Milestones
+                                    Your Milestones (What You Need to Deliver)
                                 </strong>
-                                <span className="text-muted">
-                                    {completedMilestones} / {totalMilestones} completed
+                                <span>
+                                    {myMilestones.filter(m => m.status === 2 || m.status === 'Completed').length} / {myMilestones.length} completed
                                 </span>
                             </div>
-                            <CProgress value={progressPercent} className="mt-2" />
                         </CCardHeader>
                         <CCardBody>
                             <CListGroup>
-                                {agreement.milestones.map((milestone, index) => (
+                                {myMilestones.map((milestone, index) => (
                                     <CListGroupItem key={milestone.id} className="d-flex justify-content-between align-items-center">
                                         <div>
                                             <strong>{index + 1}. {milestone.title}</strong>
                                             <div className="small text-muted">
                                                 Duration: {milestone.durationInDays} days
-                                                {milestone.dueAt && ` • Due: ${new Date(milestone.dueAt).toLocaleDateString()}`}
+                                                {milestone.dueAt && ` | Due: ${new Date(milestone.dueAt).toLocaleDateString()}`}
                                             </div>
                                         </div>
                                         {getMilestoneStatusBadge(milestone.status)}
@@ -276,32 +434,32 @@ const AgreementDetails = () => {
                     </CCard>
                 )}
 
-                {/* Deliverables */}
-                {deliverables.length > 0 && (
+                {/* Milestones - Partner's Responsibilities */}
+                {otherMilestones.length > 0 && (
                     <CCard className="mb-4">
                         <CCardHeader>
-                            <strong>Deliverables</strong>
+                            <div className="d-flex justify-content-between align-items-center">
+                                <strong>
+                                    <CIcon icon={cilTask} className="me-2" />
+                                    Partner's Milestones (What They Will Deliver)
+                                </strong>
+                                <span className="text-muted">
+                                    {otherMilestones.filter(m => m.status === 2 || m.status === 'Completed').length} / {otherMilestones.length} completed
+                                </span>
+                            </div>
                         </CCardHeader>
                         <CCardBody>
                             <CListGroup>
-                                {deliverables.map((deliverable) => (
-                                    <CListGroupItem key={deliverable.id}>
-                                        <div className="d-flex justify-content-between align-items-start">
-                                            <div>
-                                                <div className="fw-bold">{deliverable.description || 'Deliverable'}</div>
-                                                {deliverable.link && (
-                                                    <a href={deliverable.link} target="_blank" rel="noopener noreferrer" className="small">
-                                                        {deliverable.link}
-                                                    </a>
-                                                )}
-                                                <div className="small text-muted">
-                                                    Submitted: {new Date(deliverable.submittedAt).toLocaleDateString()}
-                                                </div>
+                                {otherMilestones.map((milestone, index) => (
+                                    <CListGroupItem key={milestone.id} className="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{index + 1}. {milestone.title}</strong>
+                                            <div className="small text-muted">
+                                                Duration: {milestone.durationInDays} days
+                                                {milestone.dueAt && ` | Due: ${new Date(milestone.dueAt).toLocaleDateString()}`}
                                             </div>
-                                            <CBadge color={deliverable.status === 'Approved' ? 'success' : deliverable.status === 'Pending' ? 'warning' : 'info'}>
-                                                {deliverable.status}
-                                            </CBadge>
                                         </div>
+                                        {getMilestoneStatusBadge(milestone.status)}
                                     </CListGroupItem>
                                 ))}
                             </CListGroup>
@@ -309,11 +467,178 @@ const AgreementDetails = () => {
                     </CCard>
                 )}
 
+                {/* Overall Progress */}
+                {totalMilestones > 0 && (
+                    <CCard className="mb-4">
+                        <CCardHeader>
+                            <strong>Overall Progress</strong>
+                        </CCardHeader>
+                        <CCardBody>
+                            <div className="d-flex justify-content-between mb-2">
+                                <span>Milestones Completed</span>
+                                <span>{completedMilestones} / {totalMilestones}</span>
+                            </div>
+                            <CProgress value={progressPercent} color={progressPercent === 100 ? 'success' : 'primary'} />
+                        </CCardBody>
+                    </CCard>
+                )}
+
+                {/* Deliverables Section */}
+                <CCard className="mb-4">
+                    <CCardHeader className="d-flex justify-content-between align-items-center">
+                        <strong>
+                            <CIcon icon={cilCloudUpload} className="me-2" />
+                            Deliverables
+                        </strong>
+                        {canSubmitDeliverable && (
+                            <CButton color="primary" size="sm" onClick={() => setSubmitModalVisible(true)}>
+                                <CIcon icon={cilCloudUpload} className="me-1" />
+                                Submit Your Deliverable
+                            </CButton>
+                        )}
+                    </CCardHeader>
+                    <CCardBody>
+                        {deliverables?.bothApproved && (
+                            <CAlert color="success" className="d-flex align-items-center">
+                                <CIcon icon={cilCheckCircle} className="me-2" />
+                                <strong>Both deliverables have been approved! You can now mark the agreement as complete.</strong>
+                            </CAlert>
+                        )}
+
+                        <CRow>
+                            {/* Your Deliverable */}
+                            <CCol md={6}>
+                                <CCard className={`h-100 ${myDeliverable ? '' : 'border-dashed'}`}>
+                                    <CCardHeader className="bg-primary text-white">
+                                        <strong>Your Deliverable</strong>
+                                    </CCardHeader>
+                                    <CCardBody>
+                                        {myDeliverable ? (
+                                            <div>
+                                                <div className="d-flex justify-content-between align-items-start mb-3">
+                                                    <div>{getDeliverableStatusBadge(myDeliverable.status)}</div>
+                                                    {myDeliverable.revisionCount > 0 && (
+                                                        <small className="text-muted">
+                                                            Revisions: {myDeliverable.revisionCount}
+                                                        </small>
+                                                    )}
+                                                </div>
+                                                <p><strong>Description:</strong></p>
+                                                <p className="bg-body-secondary p-2 rounded">{myDeliverable.description}</p>
+                                                <p>
+                                                    <strong>Link:</strong>{' '}
+                                                    <a href={myDeliverable.link} target="_blank" rel="noopener noreferrer">
+                                                        {myDeliverable.link} <CIcon icon={cilExternalLink} size="sm" />
+                                                    </a>
+                                                </p>
+                                                <small className="text-muted">
+                                                    Submitted: {new Date(myDeliverable.submittedAt).toLocaleString()}
+                                                </small>
+                                                {myDeliverable.revisionReason && (
+                                                    <CAlert color="warning" className="mt-3">
+                                                        <CIcon icon={cilWarning} className="me-2" />
+                                                        <strong>Revision Requested:</strong> {myDeliverable.revisionReason}
+                                                    </CAlert>
+                                                )}
+                                                {(myDeliverable.status === 2 || myDeliverable.status === 'RevisionRequested') && (
+                                                    <CButton
+                                                        color="primary"
+                                                        className="mt-3"
+                                                        onClick={() => openResubmitModal(myDeliverable)}
+                                                    >
+                                                        <CIcon icon={cilLoop} className="me-1" />
+                                                        Resubmit Deliverable
+                                                    </CButton>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center text-muted py-4">
+                                                <CIcon icon={cilCloudUpload} size="3xl" className="mb-3" />
+                                                <p>You haven't submitted a deliverable yet.</p>
+                                                {isActive && (
+                                                    <CButton color="primary" onClick={() => setSubmitModalVisible(true)}>
+                                                        Submit Now
+                                                    </CButton>
+                                                )}
+                                            </div>
+                                        )}
+                                    </CCardBody>
+                                </CCard>
+                            </CCol>
+
+                            {/* Partner's Deliverable */}
+                            <CCol md={6}>
+                                <CCard className="h-100">
+                                    <CCardHeader>
+                                        <strong>Partner's Deliverable</strong>
+                                    </CCardHeader>
+                                    <CCardBody>
+                                        {otherDeliverable ? (
+                                            <div>
+                                                <div className="d-flex justify-content-between align-items-start mb-3">
+                                                    <div>{getDeliverableStatusBadge(otherDeliverable.status)}</div>
+                                                    {otherDeliverable.revisionCount > 0 && (
+                                                        <small className="text-muted">
+                                                            Revisions: {otherDeliverable.revisionCount}
+                                                        </small>
+                                                    )}
+                                                </div>
+                                                <p><strong>Submitted by:</strong> {otherDeliverable.submittedByName}</p>
+                                                <p><strong>Description:</strong></p>
+                                                <p className="bg-body-secondary p-2 rounded">{otherDeliverable.description}</p>
+                                                <p>
+                                                    <strong>Link:</strong>{' '}
+                                                    <a href={otherDeliverable.link} target="_blank" rel="noopener noreferrer">
+                                                        {otherDeliverable.link} <CIcon icon={cilExternalLink} size="sm" />
+                                                    </a>
+                                                </p>
+                                                <small className="text-muted">
+                                                    Submitted: {new Date(otherDeliverable.submittedAt).toLocaleString()}
+                                                </small>
+                                                
+                                                {/* Action buttons for partner's deliverable */}
+                                                {otherDeliverable.canApprove && (
+                                                    <div className="mt-3 d-flex gap-2">
+                                                        <CButton
+                                                            color="success"
+                                                            onClick={() => handleApprove(otherDeliverable.id)}
+                                                        >
+                                                            <CIcon icon={cilThumbUp} className="me-1" />
+                                                            Approve
+                                                        </CButton>
+                                                        {otherDeliverable.canRequestRevision && (
+                                                            <CButton
+                                                                color="warning"
+                                                                onClick={() => openRevisionModal(otherDeliverable.id)}
+                                                            >
+                                                                <CIcon icon={cilLoop} className="me-1" />
+                                                                Request Revision
+                                                            </CButton>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="text-center text-muted py-4">
+                                                <CIcon icon={cilClock} size="3xl" className="mb-3" />
+                                                <p>Waiting for partner to submit their deliverable.</p>
+                                            </div>
+                                        )}
+                                    </CCardBody>
+                                </CCard>
+                            </CCol>
+                        </CRow>
+                    </CCardBody>
+                </CCard>
+
                 {/* Reviews */}
                 {agreement.reviews?.length > 0 && (
                     <CCard className="mb-4">
                         <CCardHeader>
-                            <strong>Reviews</strong>
+                            <strong>
+                                <CIcon icon={cilStar} className="me-2" />
+                                Reviews
+                            </strong>
                         </CCardHeader>
                         <CCardBody>
                             {agreement.reviews.map((review) => (
@@ -338,6 +663,117 @@ const AgreementDetails = () => {
                     </CCard>
                 )}
             </CCol>
+
+            {/* Submit Deliverable Modal */}
+            <CModal visible={submitModalVisible} onClose={() => setSubmitModalVisible(false)}>
+                <CModalHeader>
+                    <CModalTitle>Submit Your Deliverable</CModalTitle>
+                </CModalHeader>
+                <CModalBody>
+                    <CForm>
+                        <div className="mb-3">
+                            <CFormLabel>Link to Deliverable *</CFormLabel>
+                            <CFormInput
+                                type="url"
+                                placeholder="https://..."
+                                value={submitForm.link}
+                                onChange={(e) => setSubmitForm({ ...submitForm, link: e.target.value })}
+                            />
+                            <small className="text-muted">
+                                Provide a link to your work (GitHub repo, Google Drive, Dropbox, etc.)
+                            </small>
+                        </div>
+                        <div className="mb-3">
+                            <CFormLabel>Description *</CFormLabel>
+                            <CFormTextarea
+                                rows={4}
+                                placeholder="Describe what you've delivered and how it meets the agreement requirements..."
+                                value={submitForm.description}
+                                onChange={(e) => setSubmitForm({ ...submitForm, description: e.target.value })}
+                            />
+                        </div>
+                    </CForm>
+                </CModalBody>
+                <CModalFooter>
+                    <CButton color="secondary" onClick={() => setSubmitModalVisible(false)}>
+                        Cancel
+                    </CButton>
+                    <CButton color="primary" onClick={handleSubmitDeliverable} disabled={submitLoading}>
+                        {submitLoading ? <CSpinner size="sm" /> : 'Submit Deliverable'}
+                    </CButton>
+                </CModalFooter>
+            </CModal>
+
+            {/* Request Revision Modal */}
+            <CModal visible={revisionModalVisible} onClose={() => setRevisionModalVisible(false)}>
+                <CModalHeader>
+                    <CModalTitle>Request Revision</CModalTitle>
+                </CModalHeader>
+                <CModalBody>
+                    <CAlert color="info">
+                        Please explain what needs to be changed or improved in the deliverable.
+                    </CAlert>
+                    <CForm>
+                        <div className="mb-3">
+                            <CFormLabel>Reason for Revision *</CFormLabel>
+                            <CFormTextarea
+                                rows={4}
+                                placeholder="Explain what needs to be changed..."
+                                value={revisionReason}
+                                onChange={(e) => setRevisionReason(e.target.value)}
+                            />
+                        </div>
+                    </CForm>
+                </CModalBody>
+                <CModalFooter>
+                    <CButton color="secondary" onClick={() => setRevisionModalVisible(false)}>
+                        Cancel
+                    </CButton>
+                    <CButton color="warning" onClick={handleRequestRevision} disabled={revisionLoading}>
+                        {revisionLoading ? <CSpinner size="sm" /> : 'Request Revision'}
+                    </CButton>
+                </CModalFooter>
+            </CModal>
+
+            {/* Resubmit Deliverable Modal */}
+            <CModal visible={resubmitModalVisible} onClose={() => setResubmitModalVisible(false)}>
+                <CModalHeader>
+                    <CModalTitle>Resubmit Deliverable</CModalTitle>
+                </CModalHeader>
+                <CModalBody>
+                    <CAlert color="info">
+                        Update your deliverable based on the feedback received.
+                    </CAlert>
+                    <CForm>
+                        <div className="mb-3">
+                            <CFormLabel>Link to Deliverable *</CFormLabel>
+                            <CFormInput
+                                type="url"
+                                placeholder="https://..."
+                                value={resubmitForm.link}
+                                onChange={(e) => setResubmitForm({ ...resubmitForm, link: e.target.value })}
+                            />
+                        </div>
+                        <div className="mb-3">
+                            <CFormLabel>Description *</CFormLabel>
+                            <CFormTextarea
+                                rows={4}
+                                placeholder="Describe the changes you've made..."
+                                value={resubmitForm.description}
+                                onChange={(e) => setResubmitForm({ ...resubmitForm, description: e.target.value })}
+                            />
+                        </div>
+                    </CForm>
+                </CModalBody>
+                <CModalFooter>
+                    <CButton color="secondary" onClick={() => setResubmitModalVisible(false)}>
+                        Cancel
+                    </CButton>
+                    <CButton color="primary" onClick={handleResubmit} disabled={resubmitLoading}>
+                        {resubmitLoading ? <CSpinner size="sm" /> : 'Resubmit'}
+                    </CButton>
+                </CModalFooter>
+            </CModal>
         </CRow>
     )
 }

@@ -1,7 +1,7 @@
 import CIcon from '@coreui/icons-react'
 import {
   cilAddressBook,
-  cilEnvelopeOpen,
+  cilHandshake,
   cilLayers,
   cilLockLocked,
   cilPlus,
@@ -33,15 +33,15 @@ const appNavigation = [
   },
   {
     component: CNavItem,
-    name: 'Messages',
-    to: '/messages',
-    icon: <CIcon icon={cilEnvelopeOpen} customClassName="nav-icon" />,
-  },
-  {
-    component: CNavItem,
     name: 'Proposals',
     to: '/proposals',
     icon: <CIcon icon={cilBriefcase} customClassName="nav-icon" />,
+  },
+  {
+    component: CNavItem,
+    name: 'Agreements',
+    to: '/agreements',
+    icon: <CIcon icon={cilHandshake} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,
