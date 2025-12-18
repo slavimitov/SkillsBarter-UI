@@ -80,17 +80,18 @@ const RequestOffer = () => {
         try {
             if (!offer) return
 
-            const milestonesText = formData.milestones
-                .map((m, i) => `Milestone ${i + 1}: ${m.title} (${m.durationInDays} days)${m.dueAt ? ' - Due: ' + m.dueAt : ''}`)
-                .join('\n');
-
-            const fullTerms = `${formData.terms}\n\nProposed Milestones:\n${milestonesText}`;
+            const milestones = formData.milestones.map(m => ({
+                title: m.title,
+                durationInDays: parseInt(m.durationInDays) || 1,
+                dueAt: m.dueAt ? new Date(m.dueAt).toISOString() : null
+            }))
 
             const payload = {
                 offerId: offer.id,
-                terms: fullTerms,
-                proposerOffer: "I will complete the work as described in the terms.", 
-                deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+                terms: formData.terms,
+                proposerOffer: "I will complete the work as described in the milestones.", 
+                deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                milestones: milestones
             }
 
             await proposalService.createProposal(payload)
