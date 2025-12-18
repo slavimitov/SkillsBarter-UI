@@ -28,54 +28,81 @@ const Offers = () => {
   const [error, setError] = useState('')
 
   const [searchTerm, setSearchTerm] = useState('')
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [sortBy, setSortBy] = useState('newest')
+  const [skillsLoaded, setSkillsLoaded] = useState(false)
 
   useEffect(() => {
-    let cancelled = false
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 500)
+
+    return () => {
+      clearTimeout(handler)
+    }
+  }, [searchTerm])
+
+  useEffect(() => {
+    const fetchSkills = async () => {
+      try {
+        const skillsRes = await httpClient.get('/skills', { params: { pageSize: 200 } })
+        const skillsPayload = skillsRes?.data
+        const skillsItems = Array.isArray(skillsPayload) ? skillsPayload : skillsPayload?.items
+        const map = {}
+        ;(Array.isArray(skillsItems) ? skillsItems : []).forEach((s) => {
+          if (s?.id != null) {
+            map[s.id] = s.name || `Skill #${s.id}`
+          }
+        })
+        setSkillsMap(map)
+        setSkillsLoaded(true)
+      } catch (err) {
+        console.error('Error loading skills:', err)
+        setSkillsLoaded(true)
+      }
+    }
+    fetchSkills()
+  }, [])
+
+  useEffect(() => {
+    if (!skillsLoaded) return
 
     const fetchData = async () => {
       try {
         setLoading(true)
         setError('')
 
-        const [offersRes, skillsRes] = await Promise.all([
-          httpClient.get('/offers', { params: { pageSize: 50 } }),
-          httpClient.get('/skills', { params: { pageSize: 200 } }),
-        ])
+        const params = {
+          pageSize: 50,
+        }
 
+        if (debouncedSearchTerm && debouncedSearchTerm.trim()) {
+          params.q = debouncedSearchTerm.trim()
+        }
+
+        if (categoryFilter) {
+          const skillEntry = Object.entries(skillsMap).find(([_, name]) => name === categoryFilter)
+          if (skillEntry) {
+            params.skillId = parseInt(skillEntry[0])
+          }
+        }
+
+        const offersRes = await httpClient.get('/offers', { params })
         const offersPayload = offersRes?.data
         const offersItems = Array.isArray(offersPayload) ? offersPayload : offersPayload?.items
-        const skillsPayload = skillsRes?.data
-        const skillsItems = Array.isArray(skillsPayload) ? skillsPayload : skillsPayload?.items
 
-        if (!cancelled) {
-          setOffers(Array.isArray(offersItems) ? offersItems : [])
-          const map = {}
-          ;(Array.isArray(skillsItems) ? skillsItems : []).forEach((s) => {
-            if (s?.id != null) {
-              map[s.id] = s.name || `Skill #${s.id}`
-            }
-          })
-          setSkillsMap(map)
-        }
+        setOffers(Array.isArray(offersItems) ? offersItems : [])
       } catch (err) {
-        if (!cancelled) {
-          setError('Failed to load offers. Please try again.')
-          console.error('Error loading offers:', err)
-        }
+        setError('Failed to load offers. Please try again.')
+        console.error('Error loading offers:', err)
       } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
+        setLoading(false)
       }
     }
 
     fetchData()
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  }, [debouncedSearchTerm, categoryFilter, skillsLoaded])
 
   const handleCreateOffer = () => {
     navigate(isAuthenticated ? '/offers/new' : '/login')
@@ -131,40 +158,23 @@ const Offers = () => {
   }
 
   const uniqueCategories = useMemo(() => {
-    const categories = new Set()
-    offers.forEach((offer) => {
-      const skillName = getSkillName(offer.skillId)
-      if (skillName) categories.add(skillName)
-    })
-    return Array.from(categories).sort()
-  }, [offers, skillsMap])
+    return Array.from(new Set(Object.values(skillsMap))).sort()
+  }, [skillsMap])
 
   const filteredOffers = useMemo(() => {
     let result = [...offers]
 
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase()
-      result = result.filter(
-        (offer) =>
-          offer.title?.toLowerCase().includes(term) ||
-          offer.description?.toLowerCase().includes(term)
-      )
-    }
-
-    if (categoryFilter) {
-      result = result.filter((offer) => getSkillName(offer.skillId) === categoryFilter)
-    }
 
     if (sortBy === 'newest') {
       result.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
     } else if (sortBy === 'oldest') {
       result.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0))
     } else if (sortBy === 'rating') {
-      result.sort((a, b) => (b.owner?.rating || 0) - (a.owner?.rating || 0))
+      result.sort((a, b) => (b.rating || 0) - (a.rating || 0))
     }
 
     return result
-  }, [offers, searchTerm, categoryFilter, sortBy, skillsMap])
+  }, [offers, sortBy])
 
   const hasOffers = filteredOffers.length > 0
 
