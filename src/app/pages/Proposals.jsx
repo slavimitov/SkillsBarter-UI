@@ -23,12 +23,17 @@ import {
     CForm,
     CFormLabel,
     CFormTextarea,
+    CFormInput,
     CNav,
     CNavItem,
     CNavLink,
     CTabContent,
-    CTabPane
+    CTabPane,
+    CListGroup,
+    CListGroupItem
 } from '@coreui/react'
+import CIcon from '@coreui/icons-react'
+import { cilPlus, cilTrash } from '@coreui/icons'
 import { useAuth } from '../contexts/AuthContext'
 import proposalService from '../services/proposalService'
 
@@ -45,6 +50,9 @@ const Proposals = () => {
     const [selectedProposal, setSelectedProposal] = useState(null)
     const [counterTerms, setCounterTerms] = useState('')
     const [actionLoading, setActionLoading] = useState(false)
+    
+    const [acceptModalVisible, setAcceptModalVisible] = useState(false)
+    const [acceptMilestones, setAcceptMilestones] = useState([{ title: '', durationInDays: 7, dueAt: '' }])
 
     useEffect(() => {
         if (user?.id) {
@@ -80,12 +88,40 @@ const Proposals = () => {
         }
     }
 
-    const handleAccept = async (id) => {
-        if (!window.confirm("Are you sure you want to accept this proposal? An active agreement will be created.")) return
+    const openAcceptModal = (proposal) => {
+        setSelectedProposal(proposal)
+        setAcceptMilestones([{ title: '', durationInDays: 7, dueAt: '' }])
+        setAcceptModalVisible(true)
+    }
 
+    const handleAcceptMilestoneChange = (index, field, value) => {
+        const newMilestones = [...acceptMilestones]
+        newMilestones[index][field] = value
+        setAcceptMilestones(newMilestones)
+    }
+
+    const addAcceptMilestone = () => {
+        setAcceptMilestones([...acceptMilestones, { title: '', durationInDays: 7, dueAt: '' }])
+    }
+
+    const removeAcceptMilestone = (index) => {
+        if (acceptMilestones.length > 1) {
+            setAcceptMilestones(acceptMilestones.filter((_, i) => i !== index))
+        }
+    }
+
+    const submitAccept = async () => {
         try {
             setActionLoading(true)
-            await proposalService.respondToProposal(id, 0) // 0 = Accept
+            
+            const milestones = acceptMilestones.map(m => ({
+                title: m.title,
+                durationInDays: parseInt(m.durationInDays) || 7,
+                dueAt: m.dueAt ? new Date(m.dueAt).toISOString() : null
+            }))
+
+            await proposalService.respondToProposal(selectedProposal.id, 0, { milestones }) // 0 = Accept
+            setAcceptModalVisible(false)
             await fetchProposals()
         } catch (err) {
             alert(err.response?.data?.message || "Failed to accept proposal")
@@ -172,7 +208,7 @@ const Proposals = () => {
                                 <ProposalTable
                                     proposals={receivedProposals}
                                     isReceived={true}
-                                    onAccept={handleAccept}
+                                    onAccept={openAcceptModal}
                                     onDecline={handleDecline}
                                     onCounter={openCounterOffer}
                                     user={user}
@@ -211,6 +247,84 @@ const Proposals = () => {
                     <CButton color="secondary" onClick={() => setModalVisible(false)}>Cancel</CButton>
                     <CButton color="primary" onClick={submitCounterOffer} disabled={actionLoading}>
                         {actionLoading ? <CSpinner size="sm" /> : 'Send Counter-Offer'}
+                    </CButton>
+                </CModalFooter>
+            </CModal>
+
+            {/* Accept Proposal Modal - Enter Your Milestones */}
+            <CModal size="lg" visible={acceptModalVisible} onClose={() => setAcceptModalVisible(false)}>
+                <CModalHeader>
+                    <CModalTitle>Accept Proposal - Define Your Deliverables</CModalTitle>
+                </CModalHeader>
+                <CModalBody>
+                    <CAlert color="info" className="mb-3">
+                        The proposer has defined what they will deliver. Now specify what <strong>you</strong> will deliver in this exchange.
+                    </CAlert>
+                    <CForm>
+                        <div className="mb-3">
+                            <CFormLabel><strong>Your Milestones (What You Will Deliver)</strong></CFormLabel>
+                            <CListGroup className="mb-3">
+                                {acceptMilestones.map((milestone, index) => (
+                                    <CListGroupItem key={index} className="d-flex flex-column gap-2">
+                                        <div className="d-flex justify-content-between align-items-center">
+                                            <strong>Milestone #{index + 1}</strong>
+                                            {acceptMilestones.length > 1 && (
+                                                <CButton
+                                                    color="danger"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => removeAcceptMilestone(index)}
+                                                >
+                                                    <CIcon icon={cilTrash} />
+                                                </CButton>
+                                            )}
+                                        </div>
+                                        <CRow className="g-3">
+                                            <CCol md={6}>
+                                                <CFormInput
+                                                    placeholder="What will you deliver?"
+                                                    value={milestone.title}
+                                                    onChange={(e) => handleAcceptMilestoneChange(index, 'title', e.target.value)}
+                                                    required
+                                                />
+                                            </CCol>
+                                            <CCol md={3}>
+                                                <CFormInput
+                                                    type="number"
+                                                    placeholder="Days"
+                                                    min="1"
+                                                    value={milestone.durationInDays}
+                                                    onChange={(e) => handleAcceptMilestoneChange(index, 'durationInDays', e.target.value)}
+                                                    title="Duration in Days"
+                                                />
+                                            </CCol>
+                                            <CCol md={3}>
+                                                <CFormInput
+                                                    type="date"
+                                                    value={milestone.dueAt}
+                                                    onChange={(e) => handleAcceptMilestoneChange(index, 'dueAt', e.target.value)}
+                                                    placeholder="Due Date"
+                                                />
+                                            </CCol>
+                                        </CRow>
+                                    </CListGroupItem>
+                                ))}
+                            </CListGroup>
+                            <CButton color="secondary" size="sm" onClick={addAcceptMilestone}>
+                                <CIcon icon={cilPlus} className="me-1" />
+                                Add Milestone
+                            </CButton>
+                        </div>
+                    </CForm>
+                </CModalBody>
+                <CModalFooter>
+                    <CButton color="secondary" onClick={() => setAcceptModalVisible(false)}>Cancel</CButton>
+                    <CButton 
+                        color="success" 
+                        onClick={submitAccept} 
+                        disabled={actionLoading || !acceptMilestones.some(m => m.title.trim())}
+                    >
+                        {actionLoading ? <CSpinner size="sm" /> : 'Accept & Create Agreement'}
                     </CButton>
                 </CModalFooter>
             </CModal>
@@ -253,7 +367,7 @@ const ProposalTable = ({ proposals, isReceived, onAccept, onDecline, onCounter, 
                                 {/* Actions for Received Proposals - show when it's my turn to respond */}
                                 {isReceived && p.pendingResponseFromUserId === user?.id && (
                                     <>
-                                        <CButton color="success" size="sm" variant="outline" onClick={() => onAccept(p.id)}>Accept</CButton>
+                                        <CButton color="success" size="sm" variant="outline" onClick={() => onAccept(p)}>Accept</CButton>
                                         <CButton color="info" size="sm" variant="outline" onClick={() => onCounter(p)}>Counter</CButton>
                                         <CButton color="danger" size="sm" variant="outline" onClick={() => onDecline(p.id)}>Decline</CButton>
                                     </>
