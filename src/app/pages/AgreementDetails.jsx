@@ -22,6 +22,7 @@ import {
     CFormLabel,
     CFormInput,
     CFormTextarea,
+    CFormSelect,
     CTooltip,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
@@ -53,7 +54,7 @@ const AgreementDetails = () => {
     const [error, setError] = useState('')
 
     const [submitModalVisible, setSubmitModalVisible] = useState(false)
-    const [submitForm, setSubmitForm] = useState({ link: '', description: '' })
+    const [submitForm, setSubmitForm] = useState({ link: '', description: '', milestoneId: '' })
     const [submitLoading, setSubmitLoading] = useState(false)
 
     const [revisionModalVisible, setRevisionModalVisible] = useState(false)
@@ -109,15 +110,28 @@ const AgreementDetails = () => {
             return
         }
 
+        // Simple URL validation
+        try {
+            const url = new URL(submitForm.link)
+            if (!['http:', 'https:'].includes(url.protocol)) {
+                alert('Please provide a valid URL starting with http:// or https://')
+                return
+            }
+        } catch (_) {
+            alert('Please provide a valid URL (e.g., https://github.com/...)')
+            return
+        }
+
         try {
             setSubmitLoading(true)
             await deliverableService.submit({
                 agreementId: id,
+                milestoneId: submitForm.milestoneId || null,
                 link: submitForm.link,
                 description: submitForm.description,
             })
             setSubmitModalVisible(false)
-            setSubmitForm({ link: '', description: '' })
+            setSubmitForm({ link: '', description: '', milestoneId: '' })
             await fetchAgreement()
         } catch (err) {
             alert(err.response?.data?.message || 'Failed to submit deliverable')
@@ -174,6 +188,18 @@ const AgreementDetails = () => {
     const handleResubmit = async () => {
         if (!resubmitForm.link || !resubmitForm.description) {
             alert('Please fill in all fields')
+            return
+        }
+
+        // Simple URL validation
+        try {
+            const url = new URL(resubmitForm.link)
+            if (!['http:', 'https:'].includes(url.protocol)) {
+                alert('Please provide a valid URL starting with http:// or https://')
+                return
+            }
+        } catch (_) {
+            alert('Please provide a valid URL (e.g., https://github.com/...)')
             return
         }
 
@@ -523,6 +549,9 @@ const AgreementDetails = () => {
                                                         </small>
                                                     )}
                                                 </div>
+                                                {myDeliverable.milestoneTitle && (
+                                                    <p><strong>Milestone:</strong> {myDeliverable.milestoneTitle}</p>
+                                                )}
                                                 <p><strong>Description:</strong></p>
                                                 <p className="bg-body-secondary p-2 rounded">{myDeliverable.description}</p>
                                                 <p>
@@ -584,6 +613,9 @@ const AgreementDetails = () => {
                                                     )}
                                                 </div>
                                                 <p><strong>Submitted by:</strong> {otherDeliverable.submittedByName}</p>
+                                                {otherDeliverable.milestoneTitle && (
+                                                    <p><strong>Milestone:</strong> {otherDeliverable.milestoneTitle}</p>
+                                                )}
                                                 <p><strong>Description:</strong></p>
                                                 <p className="bg-body-secondary p-2 rounded">{otherDeliverable.description}</p>
                                                 <p>
@@ -671,6 +703,20 @@ const AgreementDetails = () => {
                 </CModalHeader>
                 <CModalBody>
                     <CForm>
+                        {myMilestones.length > 0 && (
+                            <div className="mb-3">
+                                <CFormLabel>Link to Milestone</CFormLabel>
+                                <CFormSelect
+                                    value={submitForm.milestoneId}
+                                    onChange={(e) => setSubmitForm({ ...submitForm, milestoneId: e.target.value })}
+                                >
+                                    <option value="">No specific milestone</option>
+                                    {myMilestones.map((m) => (
+                                        <option key={m.id} value={m.id}>{m.title}</option>
+                                    ))}
+                                </CFormSelect>
+                            </div>
+                        )}
                         <div className="mb-3">
                             <CFormLabel>Link to Deliverable *</CFormLabel>
                             <CFormInput
