@@ -35,10 +35,13 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilPlus, cilTrash } from '@coreui/icons'
 import { useAuth } from '../contexts/AuthContext'
+import { useToast } from '../contexts/ToastContext'
+import { ConfirmModal } from '../components'
 import proposalService from '../services/proposalService'
 
 const Proposals = () => {
     const { user } = useAuth()
+    const { showSuccess, showError } = useToast()
 
     const [sentProposals, setSentProposals] = useState([])
     const [receivedProposals, setReceivedProposals] = useState([])
@@ -53,6 +56,15 @@ const Proposals = () => {
     
     const [acceptModalVisible, setAcceptModalVisible] = useState(false)
     const [acceptMilestones, setAcceptMilestones] = useState([{ title: '', durationInDays: 7, dueAt: '' }])
+
+    // Confirm modal states
+    const [declineModalVisible, setDeclineModalVisible] = useState(false)
+    const [declineLoading, setDeclineLoading] = useState(false)
+    const [proposalToDecline, setProposalToDecline] = useState(null)
+
+    const [withdrawModalVisible, setWithdrawModalVisible] = useState(false)
+    const [withdrawLoading, setWithdrawLoading] = useState(false)
+    const [proposalToWithdraw, setProposalToWithdraw] = useState(null)
 
     useEffect(() => {
         if (user?.id) {
@@ -122,25 +134,34 @@ const Proposals = () => {
 
             await proposalService.respondToProposal(selectedProposal.id, 0, { milestones }) // 0 = Accept
             setAcceptModalVisible(false)
+            showSuccess('Proposal accepted! Agreement has been created.')
             await fetchProposals()
         } catch (err) {
-            alert(err.response?.data?.message || "Failed to accept proposal")
+            showError(err.response?.data?.message || "Failed to accept proposal")
         } finally {
             setActionLoading(false)
         }
     }
 
-    const handleDecline = async (id) => {
-        if (!window.confirm("Are you sure you want to decline this proposal?")) return
+    const openDeclineModal = (id) => {
+        setProposalToDecline(id)
+        setDeclineModalVisible(true)
+    }
+
+    const handleDecline = async () => {
+        if (!proposalToDecline) return
 
         try {
-            setActionLoading(true)
-            await proposalService.respondToProposal(id, 2) 
+            setDeclineLoading(true)
+            await proposalService.respondToProposal(proposalToDecline, 2) 
+            setDeclineModalVisible(false)
+            setProposalToDecline(null)
+            showSuccess('Proposal declined.')
             await fetchProposals()
         } catch (err) {
-            alert(err.response?.data?.message || "Failed to decline proposal")
+            showError(err.response?.data?.message || "Failed to decline proposal")
         } finally {
-            setActionLoading(false)
+            setDeclineLoading(false)
         }
     }
 
@@ -158,24 +179,34 @@ const Proposals = () => {
             }
             await proposalService.respondToProposal(selectedProposal.id, 1, modifications) 
             setModalVisible(false)
+            showSuccess('Counter-offer sent successfully!')
             await fetchProposals()
         } catch (err) {
-            alert(err.response?.data?.message || "Failed to send counter-offer")
+            showError(err.response?.data?.message || "Failed to send counter-offer")
         } finally {
             setActionLoading(false)
         }
     }
 
-    const handleWithdraw = async (id) => {
-        if (!window.confirm("Withdraw this proposal?")) return
+    const openWithdrawModal = (id) => {
+        setProposalToWithdraw(id)
+        setWithdrawModalVisible(true)
+    }
+
+    const handleWithdraw = async () => {
+        if (!proposalToWithdraw) return
+
         try {
-            setActionLoading(true)
-            await proposalService.withdrawProposal(id)
+            setWithdrawLoading(true)
+            await proposalService.withdrawProposal(proposalToWithdraw)
+            setWithdrawModalVisible(false)
+            setProposalToWithdraw(null)
+            showSuccess('Proposal withdrawn.')
             await fetchProposals()
         } catch (err) {
-            alert(err.response?.data?.message || "Failed to withdraw")
+            showError(err.response?.data?.message || "Failed to withdraw")
         } finally {
-            setActionLoading(false)
+            setWithdrawLoading(false)
         }
     }
 
@@ -209,7 +240,7 @@ const Proposals = () => {
                                     proposals={receivedProposals}
                                     isReceived={true}
                                     onAccept={openAcceptModal}
-                                    onDecline={handleDecline}
+                                    onDecline={openDeclineModal}
                                     onCounter={openCounterOffer}
                                     user={user}
                                 />
@@ -218,7 +249,7 @@ const Proposals = () => {
                                 <ProposalTable
                                     proposals={sentProposals}
                                     isReceived={false}
-                                    onWithdraw={handleWithdraw}
+                                    onWithdraw={openWithdrawModal}
                                 />
                             </CTabPane>
                         </CTabContent>
@@ -328,6 +359,35 @@ const Proposals = () => {
                     </CButton>
                 </CModalFooter>
             </CModal>
+
+            <ConfirmModal
+                visible={declineModalVisible}
+                onClose={() => {
+                    setDeclineModalVisible(false)
+                    setProposalToDecline(null)
+                }}
+                onConfirm={handleDecline}
+                title="Decline Proposal"
+                message="Are you sure you want to decline this proposal? This action cannot be undone."
+                confirmText="Decline"
+                confirmColor="danger"
+                loading={declineLoading}
+            />
+
+            {/* Withdraw Proposal Confirmation Modal */}
+            <ConfirmModal
+                visible={withdrawModalVisible}
+                onClose={() => {
+                    setWithdrawModalVisible(false)
+                    setProposalToWithdraw(null)
+                }}
+                onConfirm={handleWithdraw}
+                title="Withdraw Proposal"
+                message="Are you sure you want to withdraw this proposal?"
+                confirmText="Withdraw"
+                confirmColor="warning"
+                loading={withdrawLoading}
+            />
         </CRow>
     )
 }

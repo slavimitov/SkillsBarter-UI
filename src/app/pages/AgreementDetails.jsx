@@ -40,6 +40,8 @@ import {
     cilClock,
 } from '@coreui/icons'
 import { useAuth } from '../contexts/AuthContext'
+import { useToast } from '../contexts/ToastContext'
+import { ConfirmModal } from '../components'
 import agreementService from '../services/agreementService'
 import deliverableService from '../services/deliverableService'
 
@@ -47,6 +49,7 @@ const AgreementDetails = () => {
     const { id } = useParams()
     const navigate = useNavigate()
     const { user } = useAuth()
+    const { showSuccess, showError, showWarning } = useToast()
 
     const [agreement, setAgreement] = useState(null)
     const [deliverables, setDeliverables] = useState(null)
@@ -65,6 +68,12 @@ const AgreementDetails = () => {
     const [resubmitModalVisible, setResubmitModalVisible] = useState(false)
     const [resubmitForm, setResubmitForm] = useState({ link: '', description: '' })
     const [resubmitLoading, setResubmitLoading] = useState(false)
+
+    const [completeModalVisible, setCompleteModalVisible] = useState(false)
+    const [completeLoading, setCompleteLoading] = useState(false)
+    const [approveModalVisible, setApproveModalVisible] = useState(false)
+    const [approveLoading, setApproveLoading] = useState(false)
+    const [deliverableToApprove, setDeliverableToApprove] = useState(null)
 
     useEffect(() => {
         if (id) {
@@ -94,19 +103,22 @@ const AgreementDetails = () => {
     }
 
     const handleComplete = async () => {
-        if (!window.confirm('Are you sure you want to mark this agreement as complete?')) return
-
         try {
+            setCompleteLoading(true)
             await agreementService.completeAgreement(id)
+            setCompleteModalVisible(false)
+            showSuccess('Agreement marked as complete!')
             await fetchAgreement()
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to complete agreement')
+            showError(err.response?.data?.message || 'Failed to complete agreement')
+        } finally {
+            setCompleteLoading(false)
         }
     }
 
     const handleSubmitDeliverable = async () => {
         if (!submitForm.link || !submitForm.description) {
-            alert('Please fill in all fields')
+            showWarning('Please fill in all fields')
             return
         }
 
@@ -114,11 +126,11 @@ const AgreementDetails = () => {
         try {
             const url = new URL(submitForm.link)
             if (!['http:', 'https:'].includes(url.protocol)) {
-                alert('Please provide a valid URL starting with http:// or https://')
+                showWarning('Please provide a valid URL starting with http:// or https://')
                 return
             }
         } catch (_) {
-            alert('Please provide a valid URL (e.g., https://github.com/...)')
+            showWarning('Please provide a valid URL (e.g., https://github.com/...)')
             return
         }
 
@@ -132,22 +144,34 @@ const AgreementDetails = () => {
             })
             setSubmitModalVisible(false)
             setSubmitForm({ link: '', description: '', milestoneId: '' })
+            showSuccess('Deliverable submitted successfully!')
             await fetchAgreement()
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to submit deliverable')
+            showError(err.response?.data?.message || 'Failed to submit deliverable')
         } finally {
             setSubmitLoading(false)
         }
     }
 
-    const handleApprove = async (deliverableId) => {
-        if (!window.confirm('Approve this deliverable?')) return
+    const openApproveModal = (deliverableId) => {
+        setDeliverableToApprove(deliverableId)
+        setApproveModalVisible(true)
+    }
+
+    const handleApprove = async () => {
+        if (!deliverableToApprove) return
 
         try {
-            await deliverableService.approve(deliverableId)
+            setApproveLoading(true)
+            await deliverableService.approve(deliverableToApprove)
+            setApproveModalVisible(false)
+            setDeliverableToApprove(null)
+            showSuccess('Deliverable approved!')
             await fetchAgreement()
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to approve deliverable')
+            showError(err.response?.data?.message || 'Failed to approve deliverable')
+        } finally {
+            setApproveLoading(false)
         }
     }
 
@@ -159,7 +183,7 @@ const AgreementDetails = () => {
 
     const handleRequestRevision = async () => {
         if (!revisionReason || revisionReason.length < 10) {
-            alert('Please provide a detailed reason (at least 10 characters)')
+            showWarning('Please provide a detailed reason (at least 10 characters)')
             return
         }
 
@@ -168,9 +192,10 @@ const AgreementDetails = () => {
             await deliverableService.requestRevision(selectedDeliverableId, revisionReason)
             setRevisionModalVisible(false)
             setRevisionReason('')
+            showSuccess('Revision requested successfully!')
             await fetchAgreement()
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to request revision')
+            showError(err.response?.data?.message || 'Failed to request revision')
         } finally {
             setRevisionLoading(false)
         }
@@ -187,7 +212,7 @@ const AgreementDetails = () => {
 
     const handleResubmit = async () => {
         if (!resubmitForm.link || !resubmitForm.description) {
-            alert('Please fill in all fields')
+            showWarning('Please fill in all fields')
             return
         }
 
@@ -195,11 +220,11 @@ const AgreementDetails = () => {
         try {
             const url = new URL(resubmitForm.link)
             if (!['http:', 'https:'].includes(url.protocol)) {
-                alert('Please provide a valid URL starting with http:// or https://')
+                showWarning('Please provide a valid URL starting with http:// or https://')
                 return
             }
         } catch (_) {
-            alert('Please provide a valid URL (e.g., https://github.com/...)')
+            showWarning('Please provide a valid URL (e.g., https://github.com/...)')
             return
         }
 
@@ -212,9 +237,10 @@ const AgreementDetails = () => {
             })
             setResubmitModalVisible(false)
             setResubmitForm({ link: '', description: '' })
+            showSuccess('Deliverable resubmitted successfully!')
             await fetchAgreement()
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to resubmit deliverable')
+            showError(err.response?.data?.message || 'Failed to resubmit deliverable')
         } finally {
             setResubmitLoading(false)
         }
@@ -330,7 +356,7 @@ const AgreementDetails = () => {
                         </div>
                         <div className="d-flex gap-2">
                             {canComplete && (
-                                <CButton color="success" size="sm" onClick={handleComplete}>
+                                <CButton color="success" size="sm" onClick={() => setCompleteModalVisible(true)}>
                                     <CIcon icon={cilCheckCircle} className="me-1" />
                                     Mark Complete
                                 </CButton>
@@ -633,7 +659,7 @@ const AgreementDetails = () => {
                                                     <div className="mt-3 d-flex gap-2">
                                                         <CButton
                                                             color="success"
-                                                            onClick={() => handleApprove(otherDeliverable.id)}
+                                                            onClick={() => openApproveModal(otherDeliverable.id)}
                                                         >
                                                             <CIcon icon={cilThumbUp} className="me-1" />
                                                             Approve
@@ -820,6 +846,33 @@ const AgreementDetails = () => {
                     </CButton>
                 </CModalFooter>
             </CModal>
+
+            {/* Complete Agreement Confirmation Modal */}
+            <ConfirmModal
+                visible={completeModalVisible}
+                onClose={() => setCompleteModalVisible(false)}
+                onConfirm={handleComplete}
+                title="Complete Agreement"
+                message="Are you sure you want to mark this agreement as complete? This action cannot be undone."
+                confirmText="Mark Complete"
+                confirmColor="success"
+                loading={completeLoading}
+            />
+
+            {/* Approve Deliverable Confirmation Modal */}
+            <ConfirmModal
+                visible={approveModalVisible}
+                onClose={() => {
+                    setApproveModalVisible(false)
+                    setDeliverableToApprove(null)
+                }}
+                onConfirm={handleApprove}
+                title="Approve Deliverable"
+                message="Are you sure you want to approve this deliverable? Make sure you have reviewed it thoroughly."
+                confirmText="Approve"
+                confirmColor="success"
+                loading={approveLoading}
+            />
         </CRow>
     )
 }

@@ -14,12 +14,15 @@ import {
   CSpinner,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilStar, cilUser, cilCalendar, cilArrowRight } from '@coreui/icons'
+import { cilStar, cilUser, cilCalendar, cilArrowRight, cilTrash } from '@coreui/icons'
 import { useAuth } from '../contexts/AuthContext'
+import { useToast } from '../contexts/ToastContext'
+import { ConfirmModal } from '../components'
 import httpClient from '../services/httpClient'
 
 const Offers = () => {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
+  const { showSuccess, showError } = useToast()
   const navigate = useNavigate()
 
   const [offers, setOffers] = useState([])
@@ -32,6 +35,12 @@ const Offers = () => {
   const [categoryFilter, setCategoryFilter] = useState('')
   const [sortBy, setSortBy] = useState('newest')
   const [skillsLoaded, setSkillsLoaded] = useState(false)
+
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false)
+  const [offerToDelete, setOfferToDelete] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+
+  const isAdmin = user?.roles?.includes('Admin') || user?.roles?.includes('Moderator')
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -65,47 +74,70 @@ const Offers = () => {
     fetchSkills()
   }, [])
 
-  useEffect(() => {
+  const fetchData = async () => {
     if (!skillsLoaded) return
+    try {
+      setLoading(true)
+      setError('')
 
-    const fetchData = async () => {
-      try {
-        setLoading(true)
-        setError('')
-
-        const params = {
-          pageSize: 50,
-        }
-
-        if (debouncedSearchTerm && debouncedSearchTerm.trim()) {
-          params.q = debouncedSearchTerm.trim()
-        }
-
-        if (categoryFilter) {
-          const skillEntry = Object.entries(skillsMap).find(([_, name]) => name === categoryFilter)
-          if (skillEntry) {
-            params.skillId = parseInt(skillEntry[0])
-          }
-        }
-
-        const offersRes = await httpClient.get('/offers', { params })
-        const offersPayload = offersRes?.data
-        const offersItems = Array.isArray(offersPayload) ? offersPayload : offersPayload?.items
-
-        setOffers(Array.isArray(offersItems) ? offersItems : [])
-      } catch (err) {
-        setError('Failed to load offers. Please try again.')
-        console.error('Error loading offers:', err)
-      } finally {
-        setLoading(false)
+      const params = {
+        pageSize: 50,
       }
-    }
 
+      if (debouncedSearchTerm && debouncedSearchTerm.trim()) {
+        params.q = debouncedSearchTerm.trim()
+      }
+
+      if (categoryFilter) {
+        const skillEntry = Object.entries(skillsMap).find(([_, name]) => name === categoryFilter)
+        if (skillEntry) {
+          params.skillId = parseInt(skillEntry[0])
+        }
+      }
+
+      const offersRes = await httpClient.get('/offers', { params })
+      const offersPayload = offersRes?.data
+      const offersItems = Array.isArray(offersPayload) ? offersPayload : offersPayload?.items
+
+      setOffers(Array.isArray(offersItems) ? offersItems : [])
+    } catch (err) {
+      setError('Failed to load offers. Please try again.')
+      console.error('Error loading offers:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
     fetchData()
   }, [debouncedSearchTerm, categoryFilter, skillsLoaded])
 
   const handleCreateOffer = () => {
     navigate(isAuthenticated ? '/offers/new' : '/login')
+  }
+
+  const handleDeleteClick = (e, offer) => {
+    e.stopPropagation()
+    setOfferToDelete(offer)
+    setDeleteModalVisible(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!offerToDelete) return
+
+    try {
+      setDeleting(true)
+      await httpClient.delete(`/offers/${offerToDelete.id}`)
+      setDeleteModalVisible(false)
+      setOfferToDelete(null)
+      showSuccess('Offer deleted successfully!')
+      fetchData()
+    } catch (err) {
+      console.error('Error deleting offer:', err)
+      showError('Failed to delete offer. Please try again.')
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const getRelativeTime = (dateString) => {
@@ -278,6 +310,8 @@ const Offers = () => {
             const reviewCount = offer.owner?.reviewCount ?? offer.reviewCount ?? 0
             const relativeTime = getRelativeTime(offer.createdAt)
             const tags = offer.tags || []
+            const isOwner = user?.id === offer.userId
+            const canDelete = isAdmin || isOwner
 
             return (
               <CCol key={offer.id} sm={12} lg={6}>
@@ -310,12 +344,26 @@ const Offers = () => {
                           </CBadge>
                         )}
                       </div>
-                      {relativeTime && (
-                        <span className="text-body-secondary small d-flex align-items-center gap-1">
-                          <CIcon icon={cilCalendar} size="sm" />
-                          {relativeTime}
-                        </span>
-                      )}
+                      <div className="d-flex align-items-center gap-3">
+                        {relativeTime && (
+                          <span className="text-body-secondary small d-flex align-items-center gap-1">
+                            <CIcon icon={cilCalendar} size="sm" />
+                            {relativeTime}
+                          </span>
+                        )}
+                        {canDelete && (
+                          <CButton
+                            color="danger"
+                            variant="ghost"
+                            size="sm"
+                            className="p-0 border-0 text-danger opacity-75 hover-opacity-100"
+                            onClick={(e) => handleDeleteClick(e, offer)}
+                            title="Delete offer"
+                          >
+                            <CIcon icon={cilTrash} size="sm" />
+                          </CButton>
+                        )}
+                      </div>
                     </div>
 
                     <h5 className="fw-semibold mb-2" style={{ lineHeight: 1.3 }}>
@@ -414,6 +462,20 @@ const Offers = () => {
           })}
         </CRow>
       )}
+
+      <ConfirmModal
+        visible={deleteModalVisible}
+        onClose={() => {
+          setDeleteModalVisible(false)
+          setOfferToDelete(null)
+        }}
+        onConfirm={confirmDelete}
+        title="Delete Offer"
+        message={<>Are you sure you want to delete the offer <strong>"{offerToDelete?.title}"</strong>? This action cannot be undone.</>}
+        confirmText="Delete Offer"
+        confirmColor="danger"
+        loading={deleting}
+      />
     </div>
   )
 }
