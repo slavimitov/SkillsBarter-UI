@@ -1,8 +1,8 @@
 import httpClient from './httpClient'
 
 const deliverableService = {
-  submit: async ({ agreementId, link, description }) => {
-    return httpClient.post('/deliverables', { agreementId, link, description })
+  submit: async ({ agreementId, milestoneId, link, description }) => {
+    return httpClient.post('/deliverables', { agreementId, milestoneId, link, description })
   },
 
   getAgreementDeliverables: async (agreementId) => {
