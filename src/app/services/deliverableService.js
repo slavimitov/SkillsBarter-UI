@@ -18,8 +18,8 @@ const deliverableService = {
     return httpClient.post(`/deliverables/${deliverableId}/request-revision`, { reason })
   },
 
-  resubmit: async (deliverableId, { agreementId, link, description }) => {
-    return httpClient.put(`/deliverables/${deliverableId}/resubmit`, { agreementId, link, description })
+  resubmit: async (deliverableId, { agreementId, milestoneId, link, description }) => {
+    return httpClient.put(`/deliverables/${deliverableId}/resubmit`, { agreementId, milestoneId, link, description })
   },
 }
 
