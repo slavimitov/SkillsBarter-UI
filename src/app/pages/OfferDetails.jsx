@@ -21,18 +21,27 @@ import {
   cilLocationPin,
   cilLayers,
   cilClock,
+  cilTrash,
 } from '@coreui/icons'
 import httpClient from '../services/httpClient'
 import { useAuth } from '../contexts/AuthContext'
+import { useToast } from '../contexts/ToastContext'
+import { ConfirmModal } from '../components'
 
 const OfferDetails = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
+  const { showSuccess, showError } = useToast()
 
   const [offer, setOffer] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const isAdmin = user?.roles?.includes('Admin') || user?.roles?.includes('Moderator')
 
   useEffect(() => {
     let cancelled = false
@@ -65,6 +74,21 @@ const OfferDetails = () => {
       cancelled = true
     }
   }, [id])
+
+  const handleDelete = async () => {
+    try {
+      setDeleting(true)
+      await httpClient.delete(`/offers/${id}`)
+      setDeleteModalVisible(false)
+      showSuccess('Offer deleted successfully!')
+      navigate('/offers')
+    } catch (err) {
+      console.error('Error deleting offer:', err)
+      showError('Failed to delete offer. Please try again.')
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const getRelativeTime = (dateString) => {
     if (!dateString) return null
@@ -192,6 +216,8 @@ const OfferDetails = () => {
   const reviews = offer.reviews || []
   const location = offer.location || offer.owner?.location
   const availability = offer.availability
+  const isOwner = user?.id === providerId
+  const canDelete = isAdmin || isOwner
 
   return (
     <div className="offer-details-page">
@@ -400,6 +426,17 @@ const OfferDetails = () => {
                   Message Provider
                 </CButton>
 
+                {canDelete && (
+                  <CButton
+                    color="outline-danger"
+                    className="w-100 py-2 mt-3 d-flex align-items-center justify-content-center gap-2"
+                    onClick={() => setDeleteModalVisible(true)}
+                  >
+                    <CIcon icon={cilTrash} size="sm" />
+                    Delete Offer
+                  </CButton>
+                )}
+
                 {!isAuthenticated && (
                   <p className="text-body-secondary text-center small mt-3 mb-0">
                     <Link to="/login" className="text-decoration-none">
@@ -515,6 +552,18 @@ const OfferDetails = () => {
           </div>
         </CCol>
       </CRow>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmModal
+        visible={deleteModalVisible}
+        onClose={() => setDeleteModalVisible(false)}
+        onConfirm={handleDelete}
+        title="Delete Offer"
+        message="Are you sure you want to delete this offer? This action cannot be undone."
+        confirmText="Delete Offer"
+        confirmColor="danger"
+        loading={deleting}
+      />
     </div>
   )
 }

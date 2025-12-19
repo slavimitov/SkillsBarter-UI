@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import {
   CAlert,
   CBadge,
@@ -7,7 +7,9 @@ import {
   CCard,
   CCardBody,
   CCardHeader,
+  CCol,
   CFormSelect,
+  CRow,
   CSpinner,
   CTable,
   CTableBody,
@@ -18,6 +20,8 @@ import {
   CPagination,
   CPaginationItem,
 } from '@coreui/react'
+import CIcon from '@coreui/icons-react'
+import { cilTask } from '@coreui/icons'
 import { useAuth } from '../contexts/AuthContext'
 import adminService from '../services/adminService'
 
@@ -26,6 +30,7 @@ const ALLOWED_ROLES = ['Admin', 'Moderator']
 
 const Admin = () => {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const hasAccess = user?.roles?.some((role) => ALLOWED_ROLES.includes(role))
 
   if (!hasAccess) {
@@ -128,6 +133,25 @@ const Admin = () => {
           {success}
         </CAlert>
       )}
+
+      {/* Admin Quick Links */}
+      <CRow className="mb-4">
+        <CCol md={4}>
+          <CCard
+            className="h-100 cursor-pointer"
+            style={{ cursor: 'pointer' }}
+            onClick={() => navigate('/admin/agreements')}
+          >
+            <CCardBody className="d-flex align-items-center">
+              <CIcon icon={cilTask} size="3xl" className="text-primary me-3" />
+              <div>
+                <h5 className="mb-1">Agreements Monitor</h5>
+                <small className="text-muted">View and monitor all user agreements</small>
+              </div>
+            </CCardBody>
+          </CCard>
+        </CCol>
+      </CRow>
 
       <CCard className="mb-4 shadow-sm">
         <CCardHeader>
