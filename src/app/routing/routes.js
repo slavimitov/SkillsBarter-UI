@@ -7,6 +7,7 @@ const OfferDetails = React.lazy(() => import('../pages/OfferDetails'))
 const Profile = React.lazy(() => import('../pages/Profile'))
 const UserProfile = React.lazy(() => import('../pages/UserProfile'))
 const Admin = React.lazy(() => import('../pages/Admin'))
+const AdminAgreements = React.lazy(() => import('../pages/AdminAgreements'))
 const Login = React.lazy(() => import('../features/auth/Login'))
 const Register = React.lazy(() => import('../features/auth/Register'))
 const ForgotPassword = React.lazy(() => import('../features/auth/ForgotPassword'))
@@ -31,6 +32,7 @@ const routes = [
   { path: '/profile', name: 'Profile', element: Profile, protected: true },
   { path: '/users/:id', name: 'User Profile', element: UserProfile, protected: true },
   { path: '/admin', name: 'Admin', element: Admin, protected: true },
+  { path: '/admin/agreements', name: 'Admin Agreements', element: AdminAgreements, protected: true },
   { path: '/login', name: 'Login', element: Login, layout: 'public' },
   { path: '/register', name: 'Register', element: Register, layout: 'public' },
   { path: '/forgot-password', name: 'Forgot Password', element: ForgotPassword, layout: 'public' },
