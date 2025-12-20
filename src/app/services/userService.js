@@ -32,14 +32,12 @@ const userService = {
                 params: { status: 2, pageSize: 100 } // status 2 = Completed
             })
             const agreements = response.data?.agreements || []
-            
-            const canReview = agreements.some(agreement => 
-                agreement.providerId === userId || agreement.requesterId === userId
-            )
-            
+
             const relevantAgreements = agreements.filter(agreement =>
-                agreement.providerId === userId || agreement.requesterId === userId
+                agreement.providerId === userId && !agreement.hasReviewFromMe
             )
+
+            const canReview = relevantAgreements.length > 0
             
             return { canReview, agreements: relevantAgreements }
         } catch (error) {
