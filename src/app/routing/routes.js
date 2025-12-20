@@ -19,6 +19,8 @@ const RequestOffer = React.lazy(() => import('../pages/RequestOffer'))
 const Proposals = React.lazy(() => import('../pages/Proposals'))
 const Agreements = React.lazy(() => import('../pages/Agreements'))
 const AgreementDetails = React.lazy(() => import('../pages/AgreementDetails'))
+const Messages = React.lazy(() => import('../pages/Messages'))
+const Settings = React.lazy(() => import('../pages/Settings'))
 
 const routes = [
   { path: '/', name: 'Home', element: Home },
@@ -28,11 +30,13 @@ const routes = [
   { path: '/offers/:id/request', name: 'Request Offer', element: RequestOffer, protected: true },
   { path: '/proposals', name: 'Proposals', element: Proposals, protected: true },
   { path: '/agreements', name: 'Agreements', element: Agreements, protected: true },
+  { path: '/messages', name: 'Messages', element: Messages, protected: true },
   { path: '/agreements/:id', name: 'Agreement Details', element: AgreementDetails, protected: true },
   { path: '/profile', name: 'Profile', element: Profile, protected: true },
   { path: '/users/:id', name: 'User Profile', element: UserProfile, protected: true },
   { path: '/admin', name: 'Admin', element: Admin, protected: true },
   { path: '/admin/agreements', name: 'Admin Agreements', element: AdminAgreements, protected: true },
+  { path: '/settings', name: 'Settings', element: Settings, protected: true },
   { path: '/login', name: 'Login', element: Login, layout: 'public' },
   { path: '/register', name: 'Register', element: Register, layout: 'public' },
   { path: '/forgot-password', name: 'Forgot Password', element: ForgotPassword, layout: 'public' },
