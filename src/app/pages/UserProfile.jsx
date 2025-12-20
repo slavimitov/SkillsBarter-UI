@@ -97,7 +97,7 @@ const UserProfile = () => {
 
   const fetchProfile = useCallback(async () => {
     if (!id) return
-    
+
     try {
       setLoading(true)
       setError('')
@@ -113,11 +113,11 @@ const UserProfile = () => {
 
   const fetchReviews = useCallback(async (page = 1) => {
     if (!id) return
-    
+
     try {
       setReviewsLoading(true)
       const data = await reviewService.getUserReviewsWithSummary(id, page, reviewsPagination.pageSize)
-      
+
       setReviews(data.reviews?.items || [])
       setReviewsSummary(data.summary || { totalReviews: 0, averageRating: 0 })
       setReviewsPagination(prev => ({
@@ -153,15 +153,15 @@ const UserProfile = () => {
 
   const fetchUserOffers = useCallback(async () => {
     if (!id) return
-    
+
     try {
       setOffersLoading(true)
-      const response = await httpClient.get('/offers', { 
-        params: { userId: id, pageSize: 10 } 
+      const response = await httpClient.get('/offers', {
+        params: { userId: id, pageSize: 10 }
       })
       const offersData = response.data
       const userOffers = Array.isArray(offersData) ? offersData : offersData?.items || []
-      
+
       setOffers(userOffers)
     } catch (err) {
       console.error('Error fetching user offers:', err)
@@ -187,12 +187,12 @@ const UserProfile = () => {
   // Handle review submission
   const handleSubmitReview = async (e) => {
     e.preventDefault()
-    
+
     if (!reviewForm.agreementId) {
       showError('Please select an agreement')
       return
     }
-    
+
     if (reviewForm.rating < 1 || reviewForm.rating > 11) {
       showError('Please select a valid rating (1-11)')
       return
@@ -206,17 +206,17 @@ const UserProfile = () => {
         rating: reviewForm.rating,
         body: reviewForm.body || null,
       })
-      
+
       showSuccess('Review submitted successfully!')
       setReviewModalVisible(false)
       setReviewForm({ agreementId: '', rating: 6, body: '' })
-      
+
       const [newReviewsData, newEligibility, newProfile] = await Promise.all([
         reviewService.getUserReviewsWithSummary(id, 1, reviewsPagination.pageSize),
         userService.checkCanReview(id),
         userService.getPublicProfile(id),
       ])
-      
+
       setReviews(newReviewsData.reviews?.items || [])
       setReviewsSummary(newReviewsData.summary || { totalReviews: 0, averageRating: 0 })
       setReviewsPagination(prev => ({
@@ -400,7 +400,7 @@ const UserProfile = () => {
                     <CIcon icon={cilEnvelopeOpen} size="sm" />
                     Send Message
                   </CButton>
-                  
+
                   {canReview && (
                     <CButton
                       color="outline-warning"
@@ -432,7 +432,7 @@ const UserProfile = () => {
                 <CIcon icon={cilBadge} size="sm" />
                 Skills
               </h6>
-              
+
               {profile.skills && profile.skills.length > 0 ? (
                 <div className="d-flex flex-wrap gap-2">
                   {profile.skills.map((skill, idx) => (
@@ -495,7 +495,7 @@ const UserProfile = () => {
               <CTabContent className="p-4">
                 <CTabPane visible={activeTab === 'about'}>
                   <h5 className="fw-semibold mb-3">About {profile.name}</h5>
-                  
+
                   {profile.description ? (
                     <p className="text-body-secondary" style={{ lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
                       {profile.description}
@@ -531,7 +531,7 @@ const UserProfile = () => {
 
                 <CTabPane visible={activeTab === 'offers'}>
                   <h5 className="fw-semibold mb-3">{profile.name}'s Offers</h5>
-                  
+
                   {offersLoading ? (
                     <div className="text-center py-4">
                       <CSpinner color="primary" />
@@ -607,10 +607,10 @@ const UserProfile = () => {
                       </div>
                       <div className="flex-grow-1">
                         <CProgress
-                          className="mb-2"
+                          className="mb-2 rounded-pill"
                           value={((reviewsSummary.averageRating || 0) / 11) * 100}
                           color="warning"
-                          style={{ height: '8px' }}
+                          style={{ height: '10px', backgroundColor: 'transparent' }}
                         />
                         <small className="text-body-secondary">
                           Overall rating based on {reviewsSummary.totalReviews} reviews
@@ -740,7 +740,7 @@ const UserProfile = () => {
                       color={value <= reviewForm.rating ? 'warning' : 'light'}
                       size="sm"
                       onClick={() => setReviewForm({ ...reviewForm, rating: value })}
-                      style={{ 
+                      style={{
                         minWidth: '36px',
                         fontWeight: value === reviewForm.rating ? 'bold' : 'normal'
                       }}

@@ -290,10 +290,10 @@ const AdminAgreements = () => {
                                         const progressPercent =
                                             agreement.totalMilestones > 0
                                                 ? Math.round(
-                                                      (agreement.completedMilestones /
-                                                          agreement.totalMilestones) *
-                                                          100,
-                                                  )
+                                                    (agreement.completedMilestones /
+                                                        agreement.totalMilestones) *
+                                                    100,
+                                                )
                                                 : 0
 
                                         return (
@@ -352,7 +352,10 @@ const AdminAgreements = () => {
                                                     <div className="d-flex align-items-center gap-2">
                                                         <CProgress
                                                             value={progressPercent}
-                                                            style={{ flex: 1, height: '8px' }}
+                                                            variant={progressPercent > 0 && progressPercent < 100 ? 'striped' : undefined}
+                                                            animated={progressPercent > 0 && progressPercent < 100}
+                                                            className="rounded-pill"
+                                                            style={{ flex: 1, height: '10px', backgroundColor: 'transparent' }}
                                                             color={
                                                                 progressPercent === 100
                                                                     ? 'success'
@@ -374,7 +377,7 @@ const AdminAgreements = () => {
                                                             {agreement.totalDeliverables}
                                                             {agreement.totalDeliverables > 0 &&
                                                                 agreement.approvedDeliverables ===
-                                                                    agreement.totalDeliverables && (
+                                                                agreement.totalDeliverables && (
                                                                     <CIcon
                                                                         icon={cilCheckCircle}
                                                                         className="ms-1 text-success"

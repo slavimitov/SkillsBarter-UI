@@ -262,7 +262,10 @@ const Agreements = () => {
                                                                 <div className="d-flex align-items-center gap-2">
                                                                     <CProgress
                                                                         value={progressPercent}
-                                                                        style={{ flex: 1, height: '8px' }}
+                                                                        variant={progressPercent > 0 && progressPercent < 100 ? 'striped' : undefined}
+                                                                        animated={progressPercent > 0 && progressPercent < 100}
+                                                                        className="rounded-pill"
+                                                                        style={{ flex: 1, height: '10px', backgroundColor: 'transparent' }}
                                                                         color={progressPercent === 100 ? 'success' : 'primary'}
                                                                     />
                                                                     <small className="text-muted">
