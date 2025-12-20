@@ -368,7 +368,7 @@ const Profile = () => {
 
   const fetchReviews = useCallback(async (page = 1) => {
     if (!profile?.id) return
-    
+
     try {
       setReviewsLoading(true)
       const data = await reviewService.getUserReviewsWithSummary(profile.id, page, reviewsPagination.pageSize)
@@ -481,9 +481,9 @@ const Profile = () => {
         phoneNumber: formData.phoneNumber,
         skillIds: formData.skills?.map(skill => skill.skillId).filter(id => id) || []
       }
-      
+
       const response = await httpClient.put('/users/profile', updateData)
-      
+
       setProfile(response.data.profile)
       setFormData(response.data.profile)
       setIsEditing(false)
@@ -507,7 +507,7 @@ const Profile = () => {
 
   const handleDeleteOffer = async (offerId) => {
     if (!window.confirm('Are you sure you want to delete this offer?')) return
-    
+
     try {
       await httpClient.delete(`/offers/${offerId}`)
       showSuccess('Offer deleted successfully')
@@ -581,7 +581,7 @@ const Profile = () => {
           <CCardHeader>
             <CCardTitle className="m-0">My Account</CCardTitle>
           </CCardHeader>
-          <CCardBody className="p-0">       
+          <CCardBody className="p-0">
             <CNav variant="tabs" className="px-4 pt-3">
               <CNavItem>
                 <CNavLink
@@ -730,6 +730,8 @@ const Profile = () => {
                     </div>
                   </CCol>
                 </CRow>
+
+                <hr className="mt-5 mb-4 opacity-75" style={{ borderColor: 'var(--cui-border-color)' }} />
 
                 <CForm>
                   <div className="mb-4">
@@ -1023,7 +1025,10 @@ const Profile = () => {
                                   <CProgress
                                     value={progress}
                                     color={progress === 100 ? 'success' : 'primary'}
-                                    style={{ width: '80px', height: '6px' }}
+                                    variant={progress > 0 && progress < 100 ? 'striped' : undefined}
+                                    animated={progress > 0 && progress < 100}
+                                    className="rounded-pill"
+                                    style={{ width: '120px', height: '10px', backgroundColor: 'transparent' }}
                                   />
                                   <span className="small text-muted">
                                     {agreement.completedMilestones}/{agreement.totalMilestones}
