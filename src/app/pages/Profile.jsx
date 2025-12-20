@@ -65,6 +65,8 @@ const Profile = () => {
   const [error, setError] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState(null)
+  const [cooldown, setCooldown] = useState(null)
+  const [cooldownLoading, setCooldownLoading] = useState(false)
 
   const [paypalReady, setPaypalReady] = useState(false)
   const [paypalError, setPaypalError] = useState(null)
@@ -149,6 +151,24 @@ const Profile = () => {
     }
 
     fetchProfile()
+  }, [authLoading, isAuthenticated])
+
+  useEffect(() => {
+    if (authLoading || !isAuthenticated) return
+
+    const fetchCooldown = async () => {
+      try {
+        setCooldownLoading(true)
+        const response = await httpClient.get('/offers/cooldown')
+        setCooldown(response.data)
+      } catch (err) {
+        console.error('Error fetching cooldown:', err)
+      } finally {
+        setCooldownLoading(false)
+      }
+    }
+
+    fetchCooldown()
   }, [authLoading, isAuthenticated])
 
   const reloadProfile = useCallback(async () => {
@@ -623,62 +643,93 @@ const Profile = () => {
                   </CAlert>
                 )}
 
-                <div className="mb-4">
-                  <h6 className="mb-3">Premium Status</h6>
-                  <div
-                    className="p-4 rounded-3"
-                    style={{
-                      maxWidth: '420px',
-                      backgroundColor: 'var(--cui-tertiary-bg)',
-                      border: '1px solid var(--cui-border-color)',
-                    }}
-                  >
-                    {isPremium ? (
-                      <CAlert color="success" className="mb-0 d-flex align-items-center">
-                        <CIcon icon={cilCheckAlt} className="me-2" />
-                        You have Premium access.
-                      </CAlert>
-                    ) : (
-                      <>
-                        {paypalMessage && (
-                          <CAlert color="success" className="mb-3">
-                            {paypalMessage}
-                          </CAlert>
-                        )}
-                        {paypalError && (
-                          <CAlert color="danger" className="mb-3">
-                            {paypalError}
-                          </CAlert>
-                        )}
-                        {missingPaypalConfig && (
-                          <CAlert color="warning" className="mb-0">
-                            PayPal is not configured.
-                          </CAlert>
-                        )}
-                        {!missingPaypalConfig && (
-                          <>
-                            <CCardText className="mb-3">
-                              Unlock Premium for advanced features and priority placement.
-                            </CCardText>
-                            {paypalLoading && (
-                              <div className="d-flex align-items-center mb-3">
-                                <CSpinner size="sm" className="me-2" />
-                                <span>Preparing payment options...</span>
-                              </div>
-                            )}
-                            <div ref={paypalContainerRef} className="mb-0" />
-                            {activating && (
-                              <div className="d-flex align-items-center mt-3">
-                                <CSpinner size="sm" className="me-2" />
-                                <span>Activating your premium...</span>
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
+                <CRow className="mb-4">
+                  <CCol md={6} className="mb-4 mb-md-0">
+                    <h6 className="mb-3">Premium Status</h6>
+                    <div
+                      className="p-4 rounded-3 h-100"
+                      style={{
+                        backgroundColor: 'var(--cui-tertiary-bg)',
+                        border: '1px solid var(--cui-border-color)',
+                      }}
+                    >
+                      {isPremium ? (
+                        <CAlert color="success" className="mb-0 d-flex align-items-center">
+                          <CIcon icon={cilCheckAlt} className="me-2" />
+                          You have Premium access.
+                        </CAlert>
+                      ) : (
+                        <>
+                          {paypalMessage && (
+                            <CAlert color="success" className="mb-3">
+                              {paypalMessage}
+                            </CAlert>
+                          )}
+                          {paypalError && (
+                            <CAlert color="danger" className="mb-3">
+                              {paypalError}
+                            </CAlert>
+                          )}
+                          {missingPaypalConfig && (
+                            <CAlert color="warning" className="mb-0">
+                              PayPal is not configured.
+                            </CAlert>
+                          )}
+                          {!missingPaypalConfig && (
+                            <>
+                              <CCardText className="mb-3">
+                                Unlock Premium for advanced features and priority placement.
+                              </CCardText>
+                              {paypalLoading && (
+                                <div className="d-flex align-items-center mb-3">
+                                  <CSpinner size="sm" className="me-2" />
+                                  <span>Preparing payment options...</span>
+                                </div>
+                              )}
+                              <div ref={paypalContainerRef} className="mb-0" />
+                              {activating && (
+                                <div className="d-flex align-items-center mt-3">
+                                  <CSpinner size="sm" className="me-2" />
+                                  <span>Activating your premium...</span>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </CCol>
+
+                  <CCol md={6}>
+                    <h6 className="mb-3">Offer Creation Status</h6>
+                    <div
+                      className="p-4 rounded-3 h-100"
+                      style={{
+                        backgroundColor: 'var(--cui-tertiary-bg)',
+                        border: '1px solid var(--cui-border-color)',
+                      }}
+                    >
+                      {cooldownLoading ? (
+                        <div className="text-center">
+                          <CSpinner size="sm" color="primary" />
+                        </div>
+                      ) : cooldown ? (
+                        <CAlert
+                          color={cooldown.isAllowed ? 'success' : 'warning'}
+                          className="mb-0 d-flex align-items-center"
+                        >
+                          <CIcon
+                            icon={cooldown.isAllowed ? cilCheckCircle : cilXCircle}
+                            className="me-2 flex-shrink-0"
+                          />
+                          <div>{cooldown.message}</div>
+                        </CAlert>
+                      ) : (
+                        <span className="text-muted">Unable to load status</span>
+                      )}
+                    </div>
+                  </CCol>
+                </CRow>
 
                 <CForm>
                   <div className="mb-4">
