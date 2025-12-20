@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  CAlert,
   CButton,
   CCol,
   CContainer,
@@ -12,11 +11,13 @@ import {
   CFormTextarea,
   CRow,
   CSpinner,
+  CAlert,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilGift, cilLayers, cilList, cilNotes, cilShortText } from '@coreui/icons'
 
 import httpClient from '../services/httpClient'
+import { useToast } from '../contexts/ToastContext'
 
 const normalizeSkill = (skill) => {
   const id = skill?.id ?? skill?.Id
@@ -61,13 +62,12 @@ const initialValues = {
 const CreateOffer = () => {
   const [formValues, setFormValues] = useState(initialValues)
   const [errors, setErrors] = useState({})
-  const [serverError, setServerError] = useState('')
-  const [successMessage, setSuccessMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [skills, setSkills] = useState([])
   const [skillsError, setSkillsError] = useState('')
   const [isLoadingSkills, setIsLoadingSkills] = useState(false)
   const navigate = useNavigate()
+  const { showError, showSuccess } = useToast()
 
   useEffect(() => {
     let isMounted = true
@@ -126,8 +126,6 @@ const CreateOffer = () => {
     }
 
     setErrors({})
-    setServerError('')
-    setSuccessMessage('')
 
     const mergedDescription = formValues.extraDetails.trim()
       ? `${formValues.description.trim()}\n\nDetails:\n${formValues.extraDetails.trim()}`
@@ -142,12 +140,12 @@ const CreateOffer = () => {
     try {
       setIsSubmitting(true)
       await httpClient.post('/offers', payload)
-      setSuccessMessage('Offer posted successfully.')
+      showSuccess('Offer posted successfully.')
       setFormValues(initialValues)
       setTimeout(() => navigate('/offers'), 800)
     } catch (error) {
       const message = error?.response?.data?.message || 'Unable to post offer right now.'
-      setServerError(message)
+      showError(message)
     } finally {
       setIsSubmitting(false)
     }
@@ -186,17 +184,6 @@ const CreateOffer = () => {
 
               {/* Form Section */}
               <div className="p-4 p-md-5">
-                {serverError && (
-                  <CAlert color="danger" className="mb-4 border-0 shadow-sm">
-                    {serverError}
-                  </CAlert>
-                )}
-                {successMessage && (
-                  <CAlert color="success" className="mb-4 border-0 shadow-sm">
-                    {successMessage}
-                  </CAlert>
-                )}
-
                 <CForm onSubmit={handleSubmit} noValidate>
                   {/* Title Field */}
                   <div className="mb-4">

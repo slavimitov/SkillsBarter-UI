@@ -29,7 +29,7 @@ const userService = {
     checkCanReview: async (userId) => {
         try {
             const response = await httpClient.get('/agreements/my', {
-                params: { status: 2, pageSize: 100 } // status 2 = Completed
+                params: { status: 2, pageSize: 100 } 
             })
             const agreements = response.data?.agreements || []
 
