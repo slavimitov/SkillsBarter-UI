@@ -39,8 +39,8 @@ const App = () => {
     <BrowserRouter>
       <Suspense
         fallback={
-          <div className="pt-3 text-center">
-            <CSpinner color="primary" variant="grow" />
+          <div className="pt-3 text-center fade-in">
+            <CSpinner color="primary" variant="grow" className="spinner-gradient pulse" />
           </div>
         }
       >

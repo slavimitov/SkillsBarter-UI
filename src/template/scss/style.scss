@@ -3,6 +3,8 @@
 );
 @use "@coreui/chartjs/scss/coreui-chartjs";
 @use "vendors/simplebar";
+@use "custom-animations";
+@use "ui-enhancements";
 
 body {
   background-color: var(--cui-tertiary-bg);

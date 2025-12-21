@@ -34,17 +34,17 @@ const ConfirmModal = ({
   loading = false,
 }) => {
   return (
-    <CModal visible={visible} onClose={onClose}>
+    <CModal visible={visible} onClose={onClose} className="fade-in">
       <CModalHeader>
         <CModalTitle>{title}</CModalTitle>
       </CModalHeader>
       <CModalBody>{message}</CModalBody>
       <CModalFooter>
-        <CButton color="secondary" onClick={onClose} disabled={loading}>
+        <CButton color="secondary" onClick={onClose} disabled={loading} className="ripple">
           {cancelText}
         </CButton>
-        <CButton color={confirmColor} onClick={onConfirm} disabled={loading}>
-          {loading ? <CSpinner size="sm" /> : confirmText}
+        <CButton color={confirmColor} onClick={onConfirm} disabled={loading} className="ripple">
+          {loading ? <CSpinner size="sm" className="spinner-gradient" /> : confirmText}
         </CButton>
       </CModalFooter>
     </CModal>

@@ -62,20 +62,20 @@ const Home = () => {
   return (
     <CContainer>
       {/* Hero Section */}
-      <CRow className="mb-5">
+      <CRow className="mb-5 fade-in">
         <CCol xs={12}>
-          <CCard className="bg-gradient border-0 shadow-lg text-white" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+          <CCard className="bg-gradient border-0 shadow-lg text-white gradient-animation" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
             <CCardBody className="p-5 text-center">
-              <h1 className="display-4 fw-bold mb-3">Welcome to Skills Barter</h1>
-              <p className="lead mb-4">
+              <h1 className="display-4 fw-bold mb-3 float">Welcome to Skills Barter</h1>
+              <p className="lead mb-4 slide-in-left">
                 The platform where knowledge meets opportunity. Exchange skills, grow together, and build meaningful connections.
               </p>
-              <div className="d-flex gap-3 justify-content-center flex-wrap">
+              <div className="d-flex gap-3 justify-content-center flex-wrap slide-in-right">
                 <CButton 
                   color="light" 
                   size="lg" 
                   onClick={() => navigate('/offers')}
-                  className="px-4"
+                  className="px-4 ripple"
                 >
                   Browse Offers <CIcon icon={cilArrowRight} className="ms-2" />
                 </CButton>
@@ -84,7 +84,7 @@ const Home = () => {
                   variant="outline" 
                   size="lg"
                   onClick={() => navigate('/offers/new')}
-                  className="px-4"
+                  className="px-4 ripple"
                 >
                   Create Your Offer
                 </CButton>
@@ -97,10 +97,10 @@ const Home = () => {
       {/* Stats Section */}
       <CRow className="mb-5 text-center">
         {stats.map((stat, index) => (
-          <CCol key={index} xs={6} md={3} className="mb-3">
-            <CCard className="border-0 shadow-sm h-100">
+          <CCol key={index} xs={6} md={3} className="mb-3 stagger-item">
+            <CCard className="border-0 shadow-sm h-100 hover-lift">
               <CCardBody>
-                <h3 className="fw-bold text-primary mb-1">{stat.value}</h3>
+                <h3 className="fw-bold text-primary mb-1 stat-value">{stat.value}</h3>
                 <p className="text-muted mb-0 small">{stat.label}</p>
               </CCardBody>
             </CCard>
@@ -116,10 +116,10 @@ const Home = () => {
         </CCol>
         {features.map((feature, index) => (
           <CCol key={index} xs={12} md={6} lg={3} className="mb-4">
-            <CCard className="h-100 border-0 shadow-sm hover-shadow transition">
+            <CCard className="h-100 border-0 shadow-sm hover-lift feature-card">
               <CCardBody className="text-center p-4">
                 <div 
-                  className={`rounded-circle d-inline-flex align-items-center justify-content-center mb-3`}
+                  className={`rounded-circle d-inline-flex align-items-center justify-content-center mb-3 icon-background`}
                   style={{ 
                     width: '70px', 
                     height: '70px', 
@@ -130,6 +130,7 @@ const Home = () => {
                   <CIcon 
                     icon={feature.icon} 
                     size="xl" 
+                    className="icon-hover"
                     style={{ color: `var(--cui-${feature.color})` }}
                   />
                 </div>
@@ -146,16 +147,16 @@ const Home = () => {
       {/* CTA Section */}
       <CRow className="mb-5">
         <CCol xs={12}>
-          <CCard className="border-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+          <CCard className="border-0 shadow-sm neon-hover gradient-animation" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
             <CCardBody className="text-center p-5">
-              <h3 className="fw-bold mb-3 text-white">Ready to Start Exchanging?</h3>
+              <h3 className="fw-bold mb-3 text-white pulse">Ready to Start Exchanging?</h3>
               <p className="text-white mb-4" style={{ opacity: 0.9 }}>
                 Join our community today and discover endless opportunities to learn and share
               </p>
               <div className="d-flex gap-2 justify-content-center flex-wrap">
-                <CBadge style={{ backgroundColor: 'rgba(255,255,255,0.3)', color: 'white' }} className="p-2 px-3">Skill-Based Exchange</CBadge>
-                <CBadge style={{ backgroundColor: 'rgba(255,255,255,0.3)', color: 'white' }} className="p-2 px-3">Trusted Community</CBadge>
-                <CBadge style={{ backgroundColor: 'rgba(255,255,255,0.3)', color: 'white' }} className="p-2 px-3">Built on Trust</CBadge>
+                <CBadge style={{ backgroundColor: 'rgba(255,255,255,0.3)', color: 'white' }} className="p-2 px-3 badge-glow">Skill-Based Exchange</CBadge>
+                <CBadge style={{ backgroundColor: 'rgba(255,255,255,0.3)', color: 'white' }} className="p-2 px-3 badge-glow">Trusted Community</CBadge>
+                <CBadge style={{ backgroundColor: 'rgba(255,255,255,0.3)', color: 'white' }} className="p-2 px-3 badge-glow">Built on Trust</CBadge>
               </div>
             </CCardBody>
           </CCard>

@@ -65,42 +65,44 @@ const AppHeaderDropdown = () => {
       <CDropdownToggle placement="bottom-end" className="py-0 pe-0" caret={false}>
         <CAvatar
           size="md"
+          className="hover-grow"
           style={{
             backgroundColor: stringToHslColor(user?.email || user?.name || 'user'),
             color: '#fff',
             fontWeight: 700,
             userSelect: 'none',
+            cursor: 'pointer',
           }}
         >
           {getFirstLetter(user?.name || user?.email)}
         </CAvatar>
       </CDropdownToggle>
-      <CDropdownMenu className="pt-0" placement="bottom-end">
+      <CDropdownMenu className="pt-0 fade-in" placement="bottom-end">
         <CDropdownHeader className="bg-body-secondary fw-semibold mb-2">Account</CDropdownHeader>
-        <CDropdownItem onClick={() => navigate('/messages')} style={{ cursor: 'pointer' }}>
-          <CIcon icon={cilEnvelopeOpen} className="me-2" />
+        <CDropdownItem onClick={() => navigate('/messages')} className="ripple" style={{ cursor: 'pointer' }}>
+          <CIcon icon={cilEnvelopeOpen} className="me-2 icon-hover" />
           Messages
         </CDropdownItem>
-        <CDropdownItem onClick={() => navigate('/proposals')} style={{ cursor: 'pointer' }}>
-          <CIcon icon={cilFile} className="me-2" />
+        <CDropdownItem onClick={() => navigate('/proposals')} className="ripple" style={{ cursor: 'pointer' }}>
+          <CIcon icon={cilFile} className="me-2 icon-hover" />
           My Requests
         </CDropdownItem>
-        <CDropdownItem onClick={() => navigate('/agreements')} style={{ cursor: 'pointer' }}>
-          <CIcon icon={cilTask} className="me-2" />
+        <CDropdownItem onClick={() => navigate('/agreements')} className="ripple" style={{ cursor: 'pointer' }}>
+          <CIcon icon={cilTask} className="me-2 icon-hover" />
           My Agreements
         </CDropdownItem>
         <CDropdownHeader className="bg-body-secondary fw-semibold my-2">Settings</CDropdownHeader>
-        <CDropdownItem onClick={() => navigate('/profile')} style={{ cursor: 'pointer' }}>
-          <CIcon icon={cilUser} className="me-2" />
+        <CDropdownItem onClick={() => navigate('/profile')} className="ripple" style={{ cursor: 'pointer' }}>
+          <CIcon icon={cilUser} className="me-2 icon-hover" />
           Profile
         </CDropdownItem>
-        <CDropdownItem onClick={() => navigate('/settings')} style={{ cursor: 'pointer' }}>
-          <CIcon icon={cilSettings} className="me-2" />
+        <CDropdownItem onClick={() => navigate('/settings')} className="ripple" style={{ cursor: 'pointer' }}>
+          <CIcon icon={cilSettings} className="me-2 icon-hover" />
           Settings
         </CDropdownItem>
         <CDropdownDivider />
-        <CDropdownItem onClick={handleLogout} style={{ cursor: 'pointer' }}>
-          <CIcon icon={cilLockLocked} className="me-2" />
+        <CDropdownItem onClick={handleLogout} className="ripple" style={{ cursor: 'pointer' }}>
+          <CIcon icon={cilLockLocked} className="me-2 icon-hover" />
           Logout
         </CDropdownItem>
       </CDropdownMenu>

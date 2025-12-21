@@ -219,22 +219,22 @@ const Offers = () => {
   }
 
   return (
-    <div className="offers-page">
-      <CRow className="mb-4 align-items-center">
+    <div className="offers-page page-transition">
+      <CRow className="mb-4 align-items-center fade-in">
         <CCol>
-          <h2 className="mb-1 fw-bold">Browse Offers</h2>
+          <h2 className="mb-1 fw-bold text-gradient">Browse Offers</h2>
           <p className="text-body-secondary mb-0">
             Discover skills people are offering to barter
           </p>
         </CCol>
         <CCol xs="auto">
-          <CButton color="primary" onClick={handleCreateOffer} className="px-4">
+          <CButton color="primary" onClick={handleCreateOffer} className="px-4 ripple hover-grow">
             + Create Offer
           </CButton>
         </CCol>
       </CRow>
 
-      <CCard className="mb-4 border-0 shadow-sm">
+      <CCard className="mb-4 border-0 shadow-sm hover-shadow">
         <CCardBody className="py-3">
           <CRow className="g-3 align-items-center">
             <CCol md={5} lg={4}>
@@ -281,9 +281,9 @@ const Offers = () => {
       )}
 
       {!hasOffers && !error && (
-        <CCard className="border-0 shadow-sm text-center py-5">
+        <CCard className="border-0 shadow-sm text-center py-5 fade-in">
           <CCardBody>
-            <div className="text-body-secondary mb-3">
+            <div className="text-body-secondary mb-3 bounce">
               <CIcon icon={cilUser} size="3xl" />
             </div>
             <h5 className="text-body-secondary">No offers found</h5>
@@ -292,7 +292,7 @@ const Offers = () => {
                 ? 'Try adjusting your filters or search term.'
                 : 'Be the first to create an offer!'}
             </p>
-            <CButton color="primary" onClick={handleCreateOffer}>
+            <CButton color="primary" onClick={handleCreateOffer} className="ripple">
               Create an Offer
             </CButton>
           </CCardBody>
@@ -301,7 +301,7 @@ const Offers = () => {
 
       {hasOffers && (
         <CRow className="g-4">
-          {filteredOffers.map((offer) => {
+          {filteredOffers.map((offer, idx) => {
             const skillName = getSkillName(offer.skillId)
             const isActive = isActiveStatus(offer.statusCode, offer.statusLabel)
             const statusText = offer.statusLabel || offer.statusCode
@@ -314,24 +314,16 @@ const Offers = () => {
             const canDelete = isAdmin || isOwner
 
             return (
-              <CCol key={offer.id} sm={12} lg={6}>
+              <CCol key={offer.id} sm={12} lg={6} className="stagger-item">
                 <CCard
-                  className="h-100 border-0 shadow-sm offer-card"
-                  style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}
+                  className="h-100 border-0 shadow-sm offer-card neon-hover"
+                  style={{ cursor: 'pointer' }}
                   onClick={() => navigate(`/offers/${offer.id}`)}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)'
-                    e.currentTarget.style.boxShadow = '0 0.5rem 1.5rem rgba(0, 0, 0, 0.1)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)'
-                    e.currentTarget.style.boxShadow = ''
-                  }}
                 >
                   <CCardBody className="d-flex flex-column p-4">
                     <div className="d-flex justify-content-between align-items-start mb-3">
                       <div className="d-flex align-items-center gap-2 flex-wrap">
-                        <CBadge color="primary" shape="rounded-pill" className="px-3 py-1">
+                        <CBadge color="primary" shape="rounded-pill" className="px-3 py-1 badge-glow">
                           {skillName}
                         </CBadge>
                         {!isActive && statusText && (
@@ -356,11 +348,11 @@ const Offers = () => {
                             color="danger"
                             variant="ghost"
                             size="sm"
-                            className="p-0 border-0 text-danger opacity-75 hover-opacity-100"
+                            className="p-0 border-0 text-danger opacity-75 hover-opacity-100 hover-grow"
                             onClick={(e) => handleDeleteClick(e, offer)}
                             title="Delete offer"
                           >
-                            <CIcon icon={cilTrash} size="sm" />
+                            <CIcon icon={cilTrash} size="sm" className="icon-hover" />
                           </CButton>
                         )}
                       </div>
@@ -419,6 +411,7 @@ const Offers = () => {
                           textColor="white"
                           size="md"
                           src={offer.owner?.avatarUrl || offer.avatarUrl}
+                          className="hover-grow"
                         >
                           {!offer.owner?.avatarUrl && !offer.avatarUrl && getInitials(providerName)}
                         </CAvatar>
@@ -427,7 +420,7 @@ const Offers = () => {
                           <div className="d-flex align-items-center gap-1 text-body-secondary small">
                             {rating != null ? (
                               <>
-                                <CIcon icon={cilStar} size="sm" className="text-warning" />
+                                <CIcon icon={cilStar} size="sm" className="text-warning icon-hover" />
                                 <span>{Number(rating).toFixed(1)}</span>
                                 <span className="text-body-tertiary">·</span>
                                 <span>
@@ -445,14 +438,14 @@ const Offers = () => {
                         color="primary"
                         variant="ghost"
                         size="sm"
-                        className="d-flex align-items-center gap-1"
+                        className="d-flex align-items-center gap-1 ripple"
                         onClick={(e) => {
                           e.stopPropagation()
                           navigate(`/offers/${offer.id}`)
                         }}
                       >
                         View offer
-                        <CIcon icon={cilArrowRight} size="sm" />
+                        <CIcon icon={cilArrowRight} size="sm" className="icon-hover" />
                       </CButton>
                     </div>
                   </CCardBody>
