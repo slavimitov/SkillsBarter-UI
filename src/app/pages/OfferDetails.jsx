@@ -22,6 +22,7 @@ import {
   cilLayers,
   cilClock,
   cilTrash,
+  cilPencil,
 } from '@coreui/icons'
 import httpClient from '../services/httpClient'
 import { useAuth } from '../contexts/AuthContext'
@@ -219,6 +220,9 @@ const OfferDetails = () => {
   const isOwner = user?.id === providerId
   const canDelete = isAdmin || isOwner
 
+  const isActive = offer.statusCode === 'Active'
+  const isCompleted = offer.statusCode === 'Completed' || offer.statusCode === 'Cancelled'
+
   return (
     <div className="offer-details-page">
       <CButton
@@ -229,6 +233,22 @@ const OfferDetails = () => {
         <CIcon icon={cilArrowLeft} size="sm" />
         Back to offers
       </CButton>
+
+      {!isActive && (
+        <CAlert color={offer.statusCode === 'Completed' ? 'success' : 'warning'} className="mb-4">
+          <div className="d-flex align-items-center gap-2">
+            <CIcon icon={offer.statusCode === 'Completed' ? cilStar : cilClock} />
+            <div>
+              <strong>This offer is {offer.statusLabel || offer.statusCode}.</strong>
+              <span className="ms-1">
+                {offer.statusCode === 'Completed'
+                  ? 'This barter has been successfully completed.'
+                  : 'It is no longer accepting new requests.'}
+              </span>
+            </div>
+          </div>
+        </CAlert>
+      )}
 
       <CRow className="g-4">
         <CCol lg={8} className="order-2 order-lg-1">
@@ -402,22 +422,22 @@ const OfferDetails = () => {
                   color="primary"
                   className="w-100 py-2 mb-3 fw-semibold"
                   size="lg"
-                  disabled={!isAuthenticated}
+                  disabled={!isAuthenticated || !isActive}
                   onClick={() => {
-                    if (isAuthenticated) {
+                    if (isAuthenticated && isActive) {
                       navigate(`/offers/${id}/request`)
                     }
                   }}
                 >
-                  Request this Offer
+                  {!isActive ? `Offer ${offer.statusLabel || offer.statusCode}` : 'Request this Offer'}
                 </CButton>
 
                 <CButton
                   color="outline-primary"
                   className="w-100 py-2 d-flex align-items-center justify-content-center gap-2"
-                  disabled={!isAuthenticated}
+                  disabled={!isAuthenticated || !isActive}
                   onClick={() => {
-                    if (isAuthenticated && providerId) {
+                    if (isAuthenticated && providerId && isActive) {
                       navigate(`/messages/${providerId}`)
                     }
                   }}
@@ -425,6 +445,17 @@ const OfferDetails = () => {
                   <CIcon icon={cilEnvelopeOpen} size="sm" />
                   Message Provider
                 </CButton>
+
+                {canDelete && (
+                  <CButton
+                    color="outline-secondary"
+                    className="w-100 py-2 mt-3 d-flex align-items-center justify-content-center gap-2"
+                    onClick={() => navigate(`/offers/${id}/edit`)}
+                  >
+                    <CIcon icon={cilPencil} size="sm" />
+                    Edit Offer
+                  </CButton>
+                )}
 
                 {canDelete && (
                   <CButton
@@ -553,7 +584,6 @@ const OfferDetails = () => {
         </CCol>
       </CRow>
 
-      {/* Delete Confirmation Modal */}
       <ConfirmModal
         visible={deleteModalVisible}
         onClose={() => setDeleteModalVisible(false)}
@@ -564,7 +594,7 @@ const OfferDetails = () => {
         confirmColor="danger"
         loading={deleting}
       />
-    </div>
+    </div >
   )
 }
 

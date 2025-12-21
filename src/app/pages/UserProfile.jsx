@@ -373,7 +373,7 @@ const UserProfile = () => {
               <div className="d-flex justify-content-center gap-4 mb-4 py-3 border-top border-bottom">
                 <div className="text-center">
                   <div className="fw-bold fs-5">{profile.stats?.totalActiveOffers || 0}</div>
-                  <div className="text-body-secondary small">Active Offers</div>
+                  <div className="text-body-secondary small">Total Offers</div>
                 </div>
                 <div className="text-center">
                   <div className="fw-bold fs-5">{profile.stats?.totalReviews || 0}</div>
@@ -532,49 +532,72 @@ const UserProfile = () => {
                 <CTabPane visible={activeTab === 'offers'}>
                   <h5 className="fw-semibold mb-3">{profile.name}'s Offers</h5>
 
-                  {offersLoading ? (
-                    <div className="text-center py-4">
-                      <CSpinner color="primary" />
-                    </div>
-                  ) : offers.length > 0 ? (
-                    <CListGroup>
-                      {offers.map((offer) => (
-                        <CListGroupItem
-                          key={offer.id}
-                          className="d-flex justify-content-between align-items-start p-3"
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => navigate(`/offers/${offer.id}`)}
-                        >
-                          <div className="flex-grow-1">
-                            <div className="d-flex align-items-center gap-2 mb-1">
-                              <h6 className="mb-0 fw-semibold">{offer.title}</h6>
-                              <CBadge color="primary" size="sm">
-                                {offer.skillName || 'General'}
-                              </CBadge>
+                  {(() => {
+                    const activeOffers = offers.filter(o => ['Active', 'UnderAgreement', 'UnderReview'].includes(o.statusCode))
+                    const historyOffers = offers.filter(o => !['Active', 'UnderAgreement', 'UnderReview'].includes(o.statusCode))
+
+                    const OffersList = ({ data }) => (
+                      <CListGroup>
+                        {data.map((offer) => (
+                          <CListGroupItem
+                            key={offer.id}
+                            className="d-flex justify-content-between align-items-start p-3"
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => navigate(`/offers/${offer.id}`)}
+                          >
+                            <div className="flex-grow-1">
+                              <div className="d-flex align-items-center gap-2 mb-1">
+                                <h6 className="mb-0 fw-semibold">{offer.title}</h6>
+                                <CBadge color="primary" size="sm">
+                                  {offer.skillName || 'General'}
+                                </CBadge>
+                                {offer.statusCode !== 'Active' && (
+                                  <CBadge color="secondary" size="sm" className="ms-1">
+                                    {offer.statusCode}
+                                  </CBadge>
+                                )}
+                              </div>
+                              <p className="text-body-secondary small mb-0" style={{
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                              }}>
+                                {offer.description || 'No description'}
+                              </p>
                             </div>
-                            <p className="text-body-secondary small mb-0" style={{
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                              overflow: 'hidden',
-                            }}>
-                              {offer.description || 'No description'}
-                            </p>
+                            <div className="text-end ms-3">
+                              <small className="text-body-secondary">
+                                {getRelativeTime(offer.createdAt)}
+                              </small>
+                            </div>
+                          </CListGroupItem>
+                        ))}
+                      </CListGroup>
+                    )
+
+                    return (
+                      <>
+                        <h6 className="fw-bold text-body-secondary text-uppercase small ls-1 mb-3">Active Offers</h6>
+                        {activeOffers.length > 0 ? (
+                          <OffersList data={activeOffers} />
+                        ) : (
+                          <div className="text-center py-4 mb-4 border border-dashed rounded text-body-secondary">
+                            <p className="mb-0">No active offers.</p>
                           </div>
-                          <div className="text-end ms-3">
-                            <small className="text-body-secondary">
-                              {getRelativeTime(offer.createdAt)}
-                            </small>
+                        )}
+
+                        <h6 className="fw-bold text-body-secondary text-uppercase small ls-1 mb-3 mt-5">Offer History</h6>
+                        {historyOffers.length > 0 ? (
+                          <OffersList data={historyOffers} />
+                        ) : (
+                          <div className="text-center py-4 mb-4 border border-dashed rounded text-body-secondary">
+                            <p className="mb-0">No offer history.</p>
                           </div>
-                        </CListGroupItem>
-                      ))}
-                    </CListGroup>
-                  ) : (
-                    <div className="text-center py-5">
-                      <CIcon icon={cilBriefcase} size="3xl" className="text-body-tertiary mb-3" />
-                      <p className="text-body-secondary">No offers yet</p>
-                    </div>
-                  )}
+                        )}
+                      </>
+                    )
+                  })()}
                 </CTabPane>
 
                 <CTabPane visible={activeTab === 'reviews'}>
