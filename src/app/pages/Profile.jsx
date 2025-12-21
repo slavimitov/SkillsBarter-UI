@@ -757,7 +757,8 @@ const Profile = () => {
                           name="email"
                           value={formData.email}
                           onChange={handleInputChange}
-                          disabled={!isEditing}
+                          disabled={true}
+                          className="text-body-secondary"
                           placeholder="your@email.com"
                         />
                       </CCol>
@@ -870,59 +871,90 @@ const Profile = () => {
                   </div>
                 ) : offers.length > 0 ? (
                   <>
-                    <CTable hover responsive>
-                      <CTableHead>
-                        <CTableRow>
-                          <CTableHeaderCell>Title</CTableHeaderCell>
-                          <CTableHeaderCell>Skill</CTableHeaderCell>
-                          <CTableHeaderCell>Status</CTableHeaderCell>
-                          <CTableHeaderCell>Created</CTableHeaderCell>
-                          <CTableHeaderCell>Actions</CTableHeaderCell>
-                        </CTableRow>
-                      </CTableHead>
-                      <CTableBody>
-                        {offers.map((offer) => (
-                          <CTableRow key={offer.id}>
-                            <CTableDataCell>
-                              <span
-                                className="text-primary"
-                                style={{ cursor: 'pointer' }}
-                                onClick={() => navigate(`/offers/${offer.id}`)}
-                              >
-                                {offer.title}
-                              </span>
-                            </CTableDataCell>
-                            <CTableDataCell>
-                              <CBadge color="info">{offer.skillName || 'N/A'}</CBadge>
-                            </CTableDataCell>
-                            <CTableDataCell>
-                              {getOfferStatusBadge(offer.statusCode)}
-                            </CTableDataCell>
-                            <CTableDataCell>
-                              <small className="text-muted">{formatDate(offer.createdAt)}</small>
-                            </CTableDataCell>
-                            <CTableDataCell>
-                              <div className="d-flex gap-1">
-                                <CButton
-                                  color="outline-primary"
-                                  size="sm"
-                                  onClick={() => navigate(`/offers/${offer.id}/edit`)}
-                                >
-                                  <CIcon icon={cilPencil} size="sm" />
-                                </CButton>
-                                <CButton
-                                  color="outline-danger"
-                                  size="sm"
-                                  onClick={() => handleDeleteOffer(offer.id)}
-                                >
-                                  <CIcon icon={cilTrash} size="sm" />
-                                </CButton>
-                              </div>
-                            </CTableDataCell>
-                          </CTableRow>
-                        ))}
-                      </CTableBody>
-                    </CTable>
+                    {(() => {
+                      const activeOffers = offers.filter(o => ['Active', 'UnderAgreement', 'UnderReview'].includes(o.statusCode))
+                      const historyOffers = offers.filter(o => !['Active', 'UnderAgreement', 'UnderReview'].includes(o.statusCode))
+
+                      const OffersTable = ({ data, showActions = true }) => (
+                        <CTable hover responsive className="mb-4">
+                          <CTableHead>
+                            <CTableRow>
+                              <CTableHeaderCell>Title</CTableHeaderCell>
+                              <CTableHeaderCell>Skill</CTableHeaderCell>
+                              <CTableHeaderCell>Status</CTableHeaderCell>
+                              <CTableHeaderCell>Created</CTableHeaderCell>
+                              <CTableHeaderCell>Actions</CTableHeaderCell>
+                            </CTableRow>
+                          </CTableHead>
+                          <CTableBody>
+                            {data.map((offer) => (
+                              <CTableRow key={offer.id}>
+                                <CTableDataCell>
+                                  <span
+                                    className="text-primary"
+                                    style={{ cursor: 'pointer' }}
+                                    onClick={() => navigate(`/offers/${offer.id}`)}
+                                  >
+                                    {offer.title}
+                                  </span>
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                  <CBadge color="info">{offer.skillName || 'N/A'}</CBadge>
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                  {getOfferStatusBadge(offer.statusCode)}
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                  <small className="text-muted">{formatDate(offer.createdAt)}</small>
+                                </CTableDataCell>
+                                <CTableDataCell>
+                                  <div className="d-flex gap-1">
+                                    <CButton
+                                      color="outline-primary"
+                                      size="sm"
+                                      disabled={offer.statusCode !== 'Active'}
+                                      onClick={() => navigate(`/offers/${offer.id}/edit`)}
+                                      title={offer.statusCode !== 'Active' ? 'Only active offers can be edited' : 'Edit Offer'}
+                                    >
+                                      <CIcon icon={cilPencil} size="sm" />
+                                    </CButton>
+                                    <CButton
+                                      color="outline-danger"
+                                      size="sm"
+                                      onClick={() => handleDeleteOffer(offer.id)}
+                                    >
+                                      <CIcon icon={cilTrash} size="sm" />
+                                    </CButton>
+                                  </div>
+                                </CTableDataCell>
+                              </CTableRow>
+                            ))}
+                          </CTableBody>
+                        </CTable>
+                      )
+
+                      return (
+                        <>
+                          <h6 className="fw-bold text-body-secondary text-uppercase small ls-1 mb-3">Active Offers</h6>
+                          {activeOffers.length > 0 ? (
+                            <OffersTable data={activeOffers} />
+                          ) : (
+                            <div className="text-center py-4 mb-4 border border-dashed rounded text-body-secondary">
+                              <p className="mb-0">No active offers found.</p>
+                            </div>
+                          )}
+
+                          <h6 className="fw-bold text-body-secondary text-uppercase small ls-1 mb-3 mt-5">Offer History</h6>
+                          {historyOffers.length > 0 ? (
+                            <OffersTable data={historyOffers} />
+                          ) : (
+                            <div className="text-center py-4 mb-4 border border-dashed rounded text-body-secondary">
+                              <p className="mb-0">No offer history available.</p>
+                            </div>
+                          )}
+                        </>
+                      )
+                    })()}
 
                     {offersPagination.totalPages > 1 && (
                       <CPagination className="justify-content-center">
@@ -1087,7 +1119,6 @@ const Profile = () => {
               <CTabPane visible={activeTab === 'reviews'}>
                 <h5 className="mb-4">Reviews I've Received</h5>
 
-                {/* Rating Summary */}
                 <CCard className="border mb-4" style={{ backgroundColor: 'var(--cui-tertiary-bg)' }}>
                   <CCardBody className="d-flex align-items-center gap-4">
                     <div className="text-center">
