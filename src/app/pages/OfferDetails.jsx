@@ -422,22 +422,26 @@ const OfferDetails = () => {
                   color="primary"
                   className="w-100 py-2 mb-3 fw-semibold"
                   size="lg"
-                  disabled={!isAuthenticated || !isActive}
+                  disabled={!isAuthenticated || !isActive || isOwner}
                   onClick={() => {
-                    if (isAuthenticated && isActive) {
+                    if (isAuthenticated && isActive && !isOwner) {
                       navigate(`/offers/${id}/request`)
                     }
                   }}
                 >
-                  {!isActive ? `Offer ${offer.statusLabel || offer.statusCode}` : 'Request this Offer'}
+                  {isOwner
+                    ? 'This is your offer'
+                    : !isActive
+                      ? `Offer ${offer.statusLabel || offer.statusCode}`
+                      : 'Request this Offer'}
                 </CButton>
 
                 <CButton
                   color="outline-primary"
                   className="w-100 py-2 d-flex align-items-center justify-content-center gap-2"
-                  disabled={!isAuthenticated || !isActive}
+                  disabled={!isAuthenticated || !isActive || isOwner}
                   onClick={() => {
-                    if (isAuthenticated && providerId && isActive) {
+                    if (isAuthenticated && providerId && isActive && !isOwner) {
                       navigate(`/messages/${providerId}`)
                     }
                   }}
