@@ -27,6 +27,7 @@ const routes = [
   { path: '/offers', name: 'Offers', element: Offers },
   { path: '/offers/new', name: 'New Offer', element: CreateOffer, protected: true },
   { path: '/offers/:id', name: 'Offer Details', element: OfferDetails },
+  { path: '/offers/:id/edit', name: 'Edit Offer', element: CreateOffer, protected: true },
   { path: '/offers/:id/request', name: 'Request Offer', element: RequestOffer, protected: true },
   { path: '/proposals', name: 'Proposals', element: Proposals, protected: true },
   { path: '/agreements', name: 'Agreements', element: Agreements, protected: true },

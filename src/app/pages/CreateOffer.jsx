@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import {
   CButton,
   CCol,
@@ -68,6 +68,39 @@ const CreateOffer = () => {
   const [isLoadingSkills, setIsLoadingSkills] = useState(false)
   const navigate = useNavigate()
   const { showError, showSuccess } = useToast()
+  const { id } = useParams()
+  const isEditing = Boolean(id)
+
+  useEffect(() => {
+    if (!id) return
+
+    let isMounted = true
+    const fetchOffer = async () => {
+      try {
+        const { data } = await httpClient.get(`/offers/${id}`)
+        if (isMounted) {
+          const splitDesc = data.description.split('\n\nDetails:\n')
+
+          setFormValues({
+            title: data.title,
+            description: splitDesc[0] || '',
+            extraDetails: splitDesc[1] || '',
+            skillId: data.skillId,
+          })
+        }
+      } catch (error) {
+        if (isMounted) {
+          showError('Failed to load offer details')
+          navigate('/offers')
+        }
+      }
+    }
+
+    fetchOffer()
+    return () => {
+      isMounted = false
+    }
+  }, [id, navigate, showError])
 
   useEffect(() => {
     let isMounted = true
@@ -139,8 +172,13 @@ const CreateOffer = () => {
 
     try {
       setIsSubmitting(true)
-      await httpClient.post('/offers', payload)
-      showSuccess('Offer posted successfully.')
+      if (isEditing) {
+        await httpClient.put(`/offers/${id}`, payload)
+        showSuccess('Offer updated successfully.')
+      } else {
+        await httpClient.post('/offers', payload)
+        showSuccess('Offer posted successfully.')
+      }
       setFormValues(initialValues)
       setTimeout(() => navigate('/offers'), 800)
     } catch (error) {
@@ -157,7 +195,6 @@ const CreateOffer = () => {
         <CRow className="justify-content-center">
           <CCol lg={10} xl={8}>
             <div className="bg-body rounded-4 shadow overflow-hidden">
-              {/* Header Section */}
               <div
                 className="px-4 px-md-5 py-4 text-white"
                 style={{ backgroundColor: 'var(--cui-primary)' }}
@@ -174,18 +211,16 @@ const CreateOffer = () => {
                     <CIcon icon={cilGift} size="xl" />
                   </div>
                   <div>
-                    <h1 className="mb-1 fw-bold fs-2">Share an Offer</h1>
+                    <h1 className="mb-1 fw-bold fs-2">{isEditing ? 'Edit Offer' : 'Share an Offer'}</h1>
                     <p className="mb-0 opacity-75">
-                      Describe the skill or service you want to exchange with the community
+                      {isEditing ? 'Update your offer details' : 'Describe the skill or service you want to exchange with the community'}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Form Section */}
               <div className="p-4 p-md-5">
                 <CForm onSubmit={handleSubmit} noValidate>
-                  {/* Title Field */}
                   <div className="mb-4">
                     <label className="form-label fw-semibold mb-2 fs-6">
                       <CIcon icon={cilShortText} className="me-2 text-primary" />
@@ -204,7 +239,6 @@ const CreateOffer = () => {
                     <CFormFeedback invalid>{errors.title}</CFormFeedback>
                   </div>
 
-                  {/* Skill Category Field */}
                   <div className="mb-4">
                     <label className="form-label fw-semibold mb-2 fs-6">
                       <CIcon icon={cilLayers} className="me-2 text-primary" />
@@ -238,7 +272,6 @@ const CreateOffer = () => {
                     )}
                   </div>
 
-                  {/* Description Field */}
                   <div className="mb-4">
                     <label className="form-label fw-semibold mb-2 fs-6">
                       <CIcon icon={cilList} className="me-2 text-primary" />
@@ -257,7 +290,6 @@ const CreateOffer = () => {
                     <CFormFeedback invalid>{errors.description}</CFormFeedback>
                   </div>
 
-                  {/* Additional Notes Field */}
                   <div className="mb-5">
                     <label className="form-label fw-semibold mb-2 fs-6">
                       <CIcon icon={cilNotes} className="me-2 text-primary" />
@@ -275,7 +307,6 @@ const CreateOffer = () => {
                     />
                   </div>
 
-                  {/* Submit Button */}
                   <div className="d-grid">
                     <CButton
                       color="primary"
@@ -291,7 +322,7 @@ const CreateOffer = () => {
                       ) : (
                         <>
                           <CIcon icon={cilGift} className="me-2" />
-                          Post Your Offer
+                          {isEditing ? 'Update Offer' : 'Post Your Offer'}
                         </>
                       )}
                     </CButton>

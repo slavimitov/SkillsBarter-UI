@@ -906,7 +906,9 @@ const Profile = () => {
                                 <CButton
                                   color="outline-primary"
                                   size="sm"
+                                  disabled={offer.statusCode !== 'Active'}
                                   onClick={() => navigate(`/offers/${offer.id}/edit`)}
+                                  title={offer.statusCode !== 'Active' ? 'Only active offers can be edited' : 'Edit Offer'}
                                 >
                                   <CIcon icon={cilPencil} size="sm" />
                                 </CButton>
@@ -1087,7 +1089,6 @@ const Profile = () => {
               <CTabPane visible={activeTab === 'reviews'}>
                 <h5 className="mb-4">Reviews I've Received</h5>
 
-                {/* Rating Summary */}
                 <CCard className="border mb-4" style={{ backgroundColor: 'var(--cui-tertiary-bg)' }}>
                   <CCardBody className="d-flex align-items-center gap-4">
                     <div className="text-center">
