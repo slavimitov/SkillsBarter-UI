@@ -53,9 +53,11 @@ const Proposals = () => {
     const [selectedProposal, setSelectedProposal] = useState(null)
     const [counterTerms, setCounterTerms] = useState('')
     const [actionLoading, setActionLoading] = useState(false)
-    
+
     const [acceptModalVisible, setAcceptModalVisible] = useState(false)
-    const [acceptMilestones, setAcceptMilestones] = useState([{ title: '', durationInDays: 7, dueAt: '' }])
+    const [acceptMilestones, setAcceptMilestones] = useState([{ title: '', dueAt: '' }])
+
+    const [counterMilestones, setCounterMilestones] = useState([{ title: '', dueAt: '' }])
 
     // Confirm modal states
     const [declineModalVisible, setDeclineModalVisible] = useState(false)
@@ -102,7 +104,7 @@ const Proposals = () => {
 
     const openAcceptModal = (proposal) => {
         setSelectedProposal(proposal)
-        setAcceptMilestones([{ title: '', durationInDays: 7, dueAt: '' }])
+        setAcceptMilestones([{ title: '', dueAt: '' }])
         setAcceptModalVisible(true)
     }
 
@@ -113,7 +115,7 @@ const Proposals = () => {
     }
 
     const addAcceptMilestone = () => {
-        setAcceptMilestones([...acceptMilestones, { title: '', durationInDays: 7, dueAt: '' }])
+        setAcceptMilestones([...acceptMilestones, { title: '', dueAt: '' }])
     }
 
     const removeAcceptMilestone = (index) => {
@@ -125,11 +127,10 @@ const Proposals = () => {
     const submitAccept = async () => {
         try {
             setActionLoading(true)
-            
+
             const milestones = acceptMilestones.map(m => ({
                 title: m.title,
-                durationInDays: parseInt(m.durationInDays) || 7,
-                dueAt: m.dueAt ? new Date(m.dueAt).toISOString() : null
+                durationInDays: parseInt(m.durationInDays) || 7
             }))
 
             await proposalService.respondToProposal(selectedProposal.id, 0, { milestones }) // 0 = Accept
@@ -153,7 +154,7 @@ const Proposals = () => {
 
         try {
             setDeclineLoading(true)
-            await proposalService.respondToProposal(proposalToDecline, 2) 
+            await proposalService.respondToProposal(proposalToDecline, 2)
             setDeclineModalVisible(false)
             setProposalToDecline(null)
             showSuccess('Proposal declined.')
@@ -167,17 +168,50 @@ const Proposals = () => {
 
     const openCounterOffer = (proposal) => {
         setSelectedProposal(proposal)
-        setCounterTerms(proposal.terms || '') 
+        setCounterTerms(proposal.terms || '')
+
+        if (proposal.milestones && proposal.milestones.length > 0) {
+            setCounterMilestones(proposal.milestones.map(m => ({
+                title: m.title,
+                dueAt: m.dueAt ? m.dueAt.split('T')[0] : ''
+            })))
+        } else {
+            setCounterMilestones([{ title: '', dueAt: '' }])
+        }
+
         setModalVisible(true)
+    }
+
+    const handleCounterMilestoneChange = (index, field, value) => {
+        const newMilestones = [...counterMilestones]
+        newMilestones[index][field] = value
+        setCounterMilestones(newMilestones)
+    }
+
+    const addCounterMilestone = () => {
+        setCounterMilestones([...counterMilestones, { title: '', dueAt: '' }])
+    }
+
+    const removeCounterMilestone = (index) => {
+        if (counterMilestones.length > 1) {
+            setCounterMilestones(counterMilestones.filter((_, i) => i !== index))
+        }
     }
 
     const submitCounterOffer = async () => {
         try {
             setActionLoading(true)
+            const milestones = counterMilestones.map(m => ({
+                title: m.title,
+                durationInDays: 1, // Defaulting to 1
+                dueAt: m.dueAt ? new Date(m.dueAt).toISOString() : null
+            }))
+
             const modifications = {
-                terms: counterTerms
+                terms: counterTerms,
+                milestones: milestones
             }
-            await proposalService.respondToProposal(selectedProposal.id, 1, modifications) 
+            await proposalService.respondToProposal(selectedProposal.id, 1, modifications)
             setModalVisible(false)
             showSuccess('Counter-offer sent successfully!')
             await fetchProposals()
@@ -258,7 +292,7 @@ const Proposals = () => {
             </CCol>
 
             {/* Counter Offer Modal */}
-            <CModal visible={modalVisible} onClose={() => setModalVisible(false)}>
+            <CModal size="lg" visible={modalVisible} onClose={() => setModalVisible(false)}>
                 <CModalHeader>
                     <CModalTitle>Send Counter-Offer</CModalTitle>
                 </CModalHeader>
@@ -271,6 +305,52 @@ const Proposals = () => {
                                 value={counterTerms}
                                 onChange={(e) => setCounterTerms(e.target.value)}
                             />
+                        </div>
+
+                        <div className="mb-3">
+                            <CFormLabel><strong>Revised Milestones</strong></CFormLabel>
+                            <CListGroup className="mb-3">
+                                {counterMilestones.map((milestone, index) => (
+                                    <CListGroupItem key={index} className="d-flex flex-column gap-2">
+                                        <div className="d-flex justify-content-between align-items-center">
+                                            <strong>Milestone #{index + 1}</strong>
+                                            {counterMilestones.length > 1 && (
+                                                <CButton
+                                                    color="danger"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => removeCounterMilestone(index)}
+                                                >
+                                                    <CIcon icon={cilTrash} />
+                                                </CButton>
+                                            )}
+                                        </div>
+                                        <CRow className="g-3">
+                                            <CCol md={8}>
+                                                <CFormInput
+                                                    placeholder="Milestone Title"
+                                                    value={milestone.title}
+                                                    onChange={(e) => handleCounterMilestoneChange(index, 'title', e.target.value)}
+                                                    required
+                                                />
+                                            </CCol>
+                                            <CCol md={4}>
+                                                <CFormInput
+                                                    type="date"
+                                                    value={milestone.dueAt}
+                                                    onChange={(e) => handleCounterMilestoneChange(index, 'dueAt', e.target.value)}
+                                                    placeholder="Due Date"
+                                                    required
+                                                />
+                                            </CCol>
+                                        </CRow>
+                                    </CListGroupItem>
+                                ))}
+                            </CListGroup>
+                            <CButton color="secondary" size="sm" onClick={addCounterMilestone}>
+                                <CIcon icon={cilPlus} className="me-1" />
+                                Add Milestone
+                            </CButton>
                         </div>
                     </CForm>
                 </CModalBody>
@@ -319,22 +399,13 @@ const Proposals = () => {
                                                     required
                                                 />
                                             </CCol>
-                                            <CCol md={3}>
-                                                <CFormInput
-                                                    type="number"
-                                                    placeholder="Days"
-                                                    min="1"
-                                                    value={milestone.durationInDays}
-                                                    onChange={(e) => handleAcceptMilestoneChange(index, 'durationInDays', e.target.value)}
-                                                    title="Duration in Days"
-                                                />
-                                            </CCol>
-                                            <CCol md={3}>
+                                            <CCol md={6}>
                                                 <CFormInput
                                                     type="date"
                                                     value={milestone.dueAt}
                                                     onChange={(e) => handleAcceptMilestoneChange(index, 'dueAt', e.target.value)}
                                                     placeholder="Due Date"
+                                                    required
                                                 />
                                             </CCol>
                                         </CRow>
@@ -350,9 +421,9 @@ const Proposals = () => {
                 </CModalBody>
                 <CModalFooter>
                     <CButton color="secondary" onClick={() => setAcceptModalVisible(false)}>Cancel</CButton>
-                    <CButton 
-                        color="success" 
-                        onClick={submitAccept} 
+                    <CButton
+                        color="success"
+                        onClick={submitAccept}
                         disabled={actionLoading || !acceptMilestones.some(m => m.title.trim())}
                     >
                         {actionLoading ? <CSpinner size="sm" /> : 'Accept & Create Agreement'}
@@ -434,10 +505,10 @@ const ProposalTable = ({ proposals, isReceived, onAccept, onDecline, onCounter, 
                                 )}
 
                                 {/* Actions for Sent Proposals - can withdraw if in pending state */}
-                                {!isReceived && (p.status === 0 || p.status === 1 || 
+                                {!isReceived && (p.status === 0 || p.status === 1 ||
                                     p.status === 'PendingOfferOwnerReview' || p.status === 'PendingProposerReview') && (
-                                    <CButton color="secondary" size="sm" onClick={() => onWithdraw(p.id)}>Withdraw</CButton>
-                                )}
+                                        <CButton color="secondary" size="sm" onClick={() => onWithdraw(p.id)}>Withdraw</CButton>
+                                    )}
                             </div>
                         </CTableDataCell>
                     </CTableRow>

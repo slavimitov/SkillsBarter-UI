@@ -33,7 +33,7 @@ const RequestOffer = () => {
     const [error, setError] = useState('')
     const [formData, setFormData] = useState({
         terms: '',
-        milestones: [{ title: '', durationInDays: 1, dueAt: '' }],
+        milestones: [{ title: '', dueAt: '' }],
     })
 
     useEffect(() => {
@@ -61,7 +61,7 @@ const RequestOffer = () => {
     const addMilestone = () => {
         setFormData({
             ...formData,
-            milestones: [...formData.milestones, { title: '', durationInDays: 1, dueAt: '' }],
+            milestones: [...formData.milestones, { title: '', dueAt: '' }],
         })
     }
 
@@ -82,14 +82,14 @@ const RequestOffer = () => {
 
             const milestones = formData.milestones.map(m => ({
                 title: m.title,
-                durationInDays: parseInt(m.durationInDays) || 1,
+                durationInDays: 1, // Defaulting to 1 as we use DueDate now
                 dueAt: m.dueAt ? new Date(m.dueAt).toISOString() : null
             }))
 
             const payload = {
                 offerId: offer.id,
                 terms: formData.terms,
-                proposerOffer: "I will complete the work as described in the milestones.", 
+                proposerOffer: "I will complete the work as described in the milestones.",
                 deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
                 milestones: milestones
             }
@@ -179,24 +179,14 @@ const RequestOffer = () => {
                                                         required
                                                     />
                                                 </CCol>
-                                                <CCol md={3}>
-                                                    <CFormLabel className="visually-hidden">Duration (Days)</CFormLabel>
-                                                    <CFormInput
-                                                        type="number"
-                                                        placeholder="Duration (Days)"
-                                                        min="1"
-                                                        value={milestone.durationInDays}
-                                                        onChange={(e) => handleMilestoneChange(index, 'durationInDays', e.target.value)}
-                                                        title="Duration in Days"
-                                                    />
-                                                </CCol>
-                                                <CCol md={3}>
-                                                    <CFormLabel className="visually-hidden">Due Date (Optional)</CFormLabel>
+                                                <CCol md={6}>
+                                                    <CFormLabel className="visually-hidden">Due Date</CFormLabel>
                                                     <CFormInput
                                                         type="date"
                                                         value={milestone.dueAt}
                                                         onChange={(e) => handleMilestoneChange(index, 'dueAt', e.target.value)}
                                                         placeholder="Due Date"
+                                                        required
                                                     />
                                                 </CCol>
                                             </CRow>
