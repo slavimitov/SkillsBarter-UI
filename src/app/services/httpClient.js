@@ -1,4 +1,5 @@
 import axios from 'axios'
+import * as tokenService from './tokenService'
 
 const DEFAULT_API_ROOT = 'http://localhost:5000'
 
@@ -31,23 +32,119 @@ const httpClient = axios.create({
   timeout: 15000,
 })
 
-httpClient.interceptors.request.use((config) => {
-  const token =
-    typeof window !== 'undefined' ? window.localStorage.getItem('accessToken') : undefined
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+let isRefreshing = false
+let failedQueue = []
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error)
+    } else {
+      prom.resolve(token)
+    }
+  })
+  failedQueue = []
+}
+
+const refreshAccessToken = async () => {
+  const refreshToken = tokenService.getRefreshToken()
+  if (!refreshToken) {
+    throw new Error('No refresh token available')
   }
-  return config
-})
+
+  const { data } = await httpClient.post('/auth/refresh', { refreshToken })
+  if (data?.success && data?.token) {
+    tokenService.setAccessToken(data.token)
+    if (data.refreshToken) {
+      tokenService.setRefreshToken(data.refreshToken)
+    }
+    return data.token
+  }
+
+  throw new Error('Token refresh failed')
+}
+
+httpClient.interceptors.request.use(
+  async (config) => {
+    const token = tokenService.getAccessToken()
+
+    if (!token) {
+      return config
+    }
+
+    if (tokenService.isTokenExpired(token)) {
+      if (!isRefreshing) {
+        isRefreshing = true
+
+        try {
+          const newToken = await refreshAccessToken()
+          processQueue(null, newToken)
+          config.headers.Authorization = `Bearer ${newToken}`
+        } catch (err) {
+          processQueue(err, null)
+          if (logoutCallback) {
+            logoutCallback()
+          }
+          return Promise.reject(err)
+        } finally {
+          isRefreshing = false
+        }
+      } else {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject })
+        }).then((token) => {
+          config.headers.Authorization = `Bearer ${token}`
+          return config
+        })
+      }
+    } else {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+
+    return config
+  },
+  (error) => Promise.reject(error)
+)
 
 httpClient.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error?.response?.status === 401 && logoutCallback) {
-      logoutCallback()
+  async (error) => {
+    const originalRequest = error.config
+
+    if (error?.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true
+
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject })
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`
+            return httpClient(originalRequest)
+          })
+          .catch((err) => Promise.reject(err))
+      }
+
+      isRefreshing = true
+
+      try {
+        const newToken = await refreshAccessToken()
+        processQueue(null, newToken)
+        originalRequest.headers.Authorization = `Bearer ${newToken}`
+        return httpClient(originalRequest)
+      } catch (err) {
+        processQueue(err, null)
+        if (logoutCallback) {
+          logoutCallback()
+        }
+        return Promise.reject(err)
+      } finally {
+        isRefreshing = false
+      }
     }
+
     return Promise.reject(error)
-  },
+  }
 )
 
 export default httpClient

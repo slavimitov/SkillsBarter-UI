@@ -54,7 +54,7 @@ import reviewService from '../services/reviewService'
 
 const Profile = () => {
   const navigate = useNavigate()
-  const { isAuthenticated, loading: authLoading, refreshProfile } = useAuth()
+  const { isAuthenticated, loading: authLoading, refreshProfile, logout } = useAuth()
   const { showSuccess, showError } = useToast()
   const paypalButtonsRef = useRef(null)
 
@@ -276,6 +276,26 @@ const Profile = () => {
             setPaypalMessage('Payment was cancelled. You can try again anytime.')
           },
           onError: (err) => {
+            console.error('PayPal payment failed:', err)
+
+            const errorCode = err?.code || err?.name
+            const errorMessage = err?.message || ''
+
+            const securityErrors = ['AUTHENTICATION_FAILURE', 'AUTHORIZATION_ERROR', 'TOKEN_EXPIRED']
+
+            const isSecurityError =
+              securityErrors.includes(errorCode) ||
+              errorMessage.includes('authentication') ||
+              errorMessage.includes('expired')
+
+            if (isSecurityError) {
+              logout()
+              navigate('/login', {
+                state: { message: 'Session expired. Please login again.' },
+              })
+              return
+            }
+
             setPaypalError(err?.message || 'Payment failed. Please try again.')
           },
         })

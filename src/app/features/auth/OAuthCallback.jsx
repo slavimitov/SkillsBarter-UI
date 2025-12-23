@@ -10,6 +10,7 @@ import {
   CRow,
   CSpinner,
 } from '@coreui/react'
+import * as tokenService from '../../services/tokenService'
 
 const OAuthCallback = () => {
   const [searchParams] = useSearchParams()
@@ -18,6 +19,7 @@ const OAuthCallback = () => {
 
   useEffect(() => {
     const token = searchParams.get('token')
+    const refreshToken = searchParams.get('refreshToken')
     const success = searchParams.get('success')
     const errorMessage = searchParams.get('error')
     const newUser = searchParams.get('newUser')
@@ -28,9 +30,11 @@ const OAuthCallback = () => {
     }
 
     if (success === 'true' && token) {
-      localStorage.setItem('accessToken', token)
+      tokenService.setAccessToken(token)
+      if (refreshToken) {
+        tokenService.setRefreshToken(refreshToken)
+      }
 
-      // If this is a new OAuth user, redirect to profile completion
       if (newUser === 'true') {
         navigate('/register?oauth=1', { replace: true })
       } else {

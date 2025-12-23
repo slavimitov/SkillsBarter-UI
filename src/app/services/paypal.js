@@ -91,4 +91,67 @@ export const resetPayPalLoader = () => {
   paypalPromise = null
 }
 
+export const clearPayPalCookies = () => {
+  if (typeof document === 'undefined') {
+    return
+  }
+
+  const paypalCookies = [
+    'paypal',
+    'PAYPAL',
+    'x-pp-s',
+    'nsid',
+    'cookie_check',
+    'tsrce',
+    'ts_c',
+    'ts',
+    'enforce_policy',
+    'l7_az',
+  ]
+
+  paypalCookies.forEach((cookieName) => {
+    document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`
+    document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.paypal.com;`
+    document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname};`
+  })
+}
+
+export const clearPayPalStorage = () => {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  try {
+    const keysToRemove = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key && (key.includes('paypal') || key.includes('PAYPAL'))) {
+        keysToRemove.push(key)
+      }
+    }
+    keysToRemove.forEach((key) => localStorage.removeItem(key))
+
+    const sessionKeysToRemove = []
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i)
+      if (key && (key.includes('paypal') || key.includes('PAYPAL'))) {
+        sessionKeysToRemove.push(key)
+      }
+    }
+    sessionKeysToRemove.forEach((key) => sessionStorage.removeItem(key))
+  } catch (error) {
+    console.error('Failed to clear PayPal storage:', error)
+  }
+}
+
+export const cleanupPayPalSession = () => {
+  resetPayPalLoader()
+  clearPayPalCookies()
+  clearPayPalStorage()
+
+  if (typeof window !== 'undefined' && window.paypal) {
+    delete window.paypal
+  }
+}
+
 export default loadPayPalSdk
