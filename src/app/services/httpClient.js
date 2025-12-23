@@ -35,6 +35,20 @@ const httpClient = axios.create({
 let isRefreshing = false
 let failedQueue = []
 
+// Endpoints that don't require authentication skipping token refresh for these
+const publicEndpoints = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/refresh',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/auth/verify-email',
+]
+
+const isPublicEndpoint = (url) => {
+  return publicEndpoints.some((endpoint) => url?.includes(endpoint))
+}
+
 const processQueue = (error, token = null) => {
   failedQueue.forEach((prom) => {
     if (error) {
@@ -66,6 +80,11 @@ const refreshAccessToken = async () => {
 
 httpClient.interceptors.request.use(
   async (config) => {
+    // Skipping token handling for public endpoints
+    if (isPublicEndpoint(config.url)) {
+      return config
+    }
+
     const token = tokenService.getAccessToken()
 
     if (!token) {
