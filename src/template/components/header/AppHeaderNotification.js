@@ -74,7 +74,7 @@ const AppHeaderNotification = () => {
         } else if (type === 'deliverable_submitted' || type === 'deliverable_approved' || type === 'revision_requested') {
             if (entityId) navigate(`/agreements/${entityId}`);
         } else if (type?.startsWith('dispute_') && entityId) {
-            navigate(`/agreements/${entityId}`);
+            navigate(`/disputes/${entityId}`);
         } else if (type === 'review_received') {
             navigate('/profile');
         }
