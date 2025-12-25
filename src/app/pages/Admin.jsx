@@ -21,7 +21,7 @@ import {
   CPaginationItem,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilTask } from '@coreui/icons'
+import { cilTask, cilWarning } from '@coreui/icons'
 import { useAuth } from '../contexts/AuthContext'
 import adminService from '../services/adminService'
 
@@ -147,6 +147,21 @@ const Admin = () => {
               <div>
                 <h5 className="mb-1">Agreements Monitor</h5>
                 <small className="text-muted">View and monitor all user agreements</small>
+              </div>
+            </CCardBody>
+          </CCard>
+        </CCol>
+        <CCol md={4}>
+          <CCard
+            className="h-100 cursor-pointer"
+            style={{ cursor: 'pointer' }}
+            onClick={() => navigate('/admin/disputes')}
+          >
+            <CCardBody className="d-flex align-items-center">
+              <CIcon icon={cilWarning} size="3xl" className="text-warning me-3" />
+              <div>
+                <h5 className="mb-1">Disputes Management</h5>
+                <small className="text-muted">Review and resolve user disputes</small>
               </div>
             </CCardBody>
           </CCard>
