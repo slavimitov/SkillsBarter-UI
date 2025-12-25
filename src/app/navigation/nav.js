@@ -8,7 +8,8 @@ import {
   cilSpeedometer,
   cilUser,
   cilUserPlus,
-  cilBriefcase
+  cilBriefcase,
+  cilWarning
 } from '@coreui/icons'
 import { CNavItem } from '@coreui/react'
 
@@ -42,6 +43,12 @@ const appNavigation = [
     name: 'Agreements',
     to: '/agreements',
     icon: <CIcon icon={cilHandshake} customClassName="nav-icon" />,
+  },
+  {
+    component: CNavItem,
+    name: 'My Disputes',
+    to: '/disputes',
+    icon: <CIcon icon={cilWarning} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,

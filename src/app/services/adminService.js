@@ -17,7 +17,7 @@ const adminService = {
   },
 
   getDisputes: async () => {
-    const { data } = await httpClient.get('/admin/disputes')
+    const { data } = await httpClient.get('/disputes/moderation')
     return data
   },
 
@@ -27,7 +27,7 @@ const adminService = {
   },
 
   resolveDispute: async (id, resolution) => {
-    const { data } = await httpClient.put(`/admin/disputes/${id}/resolve`, resolution)
+    const { data } = await httpClient.post(`/disputes/${id}/moderate`, resolution)
     return data
   },
 

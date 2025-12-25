@@ -38,12 +38,14 @@ import {
     cilStar,
     cilWarning,
     cilClock,
+    cilFire,
 } from '@coreui/icons'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
 import { ConfirmModal } from '../components'
 import agreementService from '../services/agreementService'
 import deliverableService from '../services/deliverableService'
+import disputeService from '../services/disputeService'
 
 const AgreementDetails = () => {
     const { id } = useParams()
@@ -75,6 +77,10 @@ const AgreementDetails = () => {
     const [approveModalVisible, setApproveModalVisible] = useState(false)
     const [approveLoading, setApproveLoading] = useState(false)
     const [deliverableToApprove, setDeliverableToApprove] = useState(null)
+
+    const [disputeModalVisible, setDisputeModalVisible] = useState(false)
+    const [disputeForm, setDisputeForm] = useState({ reason: '', description: '' })
+    const [disputeLoading, setDisputeLoading] = useState(false)
 
     useEffect(() => {
         if (id) {
@@ -183,6 +189,39 @@ const AgreementDetails = () => {
             showError(err.response?.data?.message || 'Failed to approve deliverable')
         } finally {
             setApproveLoading(false)
+        }
+    }
+
+    const handleCreateDispute = async () => {
+        if (!disputeForm.reason) {
+            showWarning('Please select a reason for the dispute')
+            return
+        }
+        if (!disputeForm.description || disputeForm.description.length < 20) {
+            showWarning('Please provide a detailed description (at least 20 characters)')
+            return
+        }
+
+        try {
+            setDisputeLoading(true)
+            const result = await disputeService.createDispute({
+                agreementId: id,
+                reasonCode: disputeForm.reason,
+                description: disputeForm.description,
+                evidence: []
+            })
+            setDisputeModalVisible(false)
+            setDisputeForm({ reason: '', description: '' })
+            showSuccess('Dispute created successfully!')
+            if (result.id) {
+                navigate(`/disputes/${result.id}`)
+            } else {
+                navigate('/disputes')
+            }
+        } catch (err) {
+            showError(err.response?.data?.message || 'Failed to create dispute')
+        } finally {
+            setDisputeLoading(false)
         }
     }
 
@@ -344,6 +383,8 @@ const AgreementDetails = () => {
     const isProvider = user?.id === agreement.providerId
     const isActive = agreement.status === 1 || agreement.status === 'InProgress'
     const canComplete = (isRequester || isProvider) && isActive && deliverables?.allApproved
+    const isDisputed = agreement.status === 4 || agreement.status === 'Disputed'
+    const canStartDispute = (isRequester || isProvider) && isActive && !agreement.hasActiveDispute
 
     const completedMilestones = agreement.milestones?.filter(m => m.status === 2 || m.status === 'Completed').length || 0
     const totalMilestones = agreement.milestones?.length || 0
@@ -386,6 +427,18 @@ const AgreementDetails = () => {
                                 <CButton color="success" size="sm" onClick={() => setCompleteModalVisible(true)}>
                                     <CIcon icon={cilCheckCircle} className="me-1" />
                                     Mark Complete
+                                </CButton>
+                            )}
+                            {canStartDispute && (
+                                <CButton color="danger" size="sm" variant="outline" onClick={() => setDisputeModalVisible(true)}>
+                                    <CIcon icon={cilFire} className="me-1" />
+                                    Start Dispute
+                                </CButton>
+                            )}
+                            {isDisputed && (
+                                <CButton color="warning" size="sm" onClick={() => navigate('/disputes')}>
+                                    <CIcon icon={cilWarning} className="me-1" />
+                                    View Disputes
                                 </CButton>
                             )}
                             <CButton color="secondary" size="sm" variant="outline" onClick={() => navigate('/agreements')}>
@@ -935,6 +988,68 @@ const AgreementDetails = () => {
                 confirmColor="success"
                 loading={approveLoading}
             />
+
+            {/* Create Dispute Modal */}
+            <CModal
+                visible={disputeModalVisible}
+                onClose={() => {
+                    setDisputeModalVisible(false)
+                    setDisputeForm({ reason: '', description: '' })
+                }}
+                size="lg"
+            >
+                <CModalHeader>
+                    <CModalTitle>
+                        <CIcon icon={cilFire} className="me-2 text-danger" />
+                        Start a Dispute
+                    </CModalTitle>
+                </CModalHeader>
+                <CModalBody>
+                    <CAlert color="warning">
+                        <CIcon icon={cilWarning} className="me-2" />
+                        <strong>Before starting a dispute:</strong>
+                        <ul className="mb-0 mt-2">
+                            <li>Try to resolve the issue directly with your partner first</li>
+                            <li>Make sure you have evidence to support your claim</li>
+                            <li>Be honest and accurate in your description</li>
+                        </ul>
+                    </CAlert>
+                    <CForm>
+                        <div className="mb-3">
+                            <CFormLabel>Reason for Dispute *</CFormLabel>
+                            <CFormSelect
+                                value={disputeForm.reason}
+                                onChange={(e) => setDisputeForm({ ...disputeForm, reason: e.target.value })}
+                            >
+                                <option value="">Select a reason</option>
+                                <option value="NonDelivery">Non-Delivery - Work was not delivered</option>
+                                <option value="QualityIssue">Quality Issue - Work does not meet requirements</option>
+                                <option value="Communication">Communication - Partner is unresponsive</option>
+                                <option value="Deadline">Deadline - Missed agreed deadlines</option>
+                                <option value="Other">Other</option>
+                            </CFormSelect>
+                        </div>
+                        <div className="mb-3">
+                            <CFormLabel>Description *</CFormLabel>
+                            <CFormTextarea
+                                rows={5}
+                                placeholder="Describe the issue in detail. Include specific examples, dates, and any attempts you've made to resolve this..."
+                                value={disputeForm.description}
+                                onChange={(e) => setDisputeForm({ ...disputeForm, description: e.target.value })}
+                            />
+                            <small className="text-muted">Minimum 20 characters required</small>
+                        </div>
+                    </CForm>
+                </CModalBody>
+                <CModalFooter>
+                    <CButton color="secondary" onClick={() => setDisputeModalVisible(false)}>
+                        Cancel
+                    </CButton>
+                    <CButton color="danger" onClick={handleCreateDispute} disabled={disputeLoading}>
+                        {disputeLoading ? <CSpinner size="sm" /> : 'Submit Dispute'}
+                    </CButton>
+                </CModalFooter>
+            </CModal>
         </CRow>
     )
 }
