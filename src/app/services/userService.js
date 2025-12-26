@@ -43,6 +43,36 @@ const userService = {
         } catch (error) {
             return { canReview: false, agreements: [] }
         }
+    },
+
+    changePassword: async (currentPassword, newPassword) => {
+        const response = await httpClient.post('/users/change-password', {
+            currentPassword,
+            newPassword
+        })
+        return response.data
+    },
+
+    changeEmail: async (newEmail) => {
+        const response = await httpClient.post('/users/change-email', {
+            newEmail
+        })
+        return response.data
+    },
+
+    deleteAccount: async () => {
+        const response = await httpClient.delete('/users/account')
+        return response.data
+    },
+
+    getPreferences: async () => {
+        const response = await httpClient.get('/users/preferences')
+        return response.data
+    },
+
+    updatePreferences: async (preferences) => {
+        const response = await httpClient.put('/users/preferences', preferences)
+        return response.data
     }
 }
 
