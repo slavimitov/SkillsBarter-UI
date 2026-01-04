@@ -145,6 +145,10 @@ const Login = () => {
                       <Link to="/forgot-password" className="text-decoration-none">
                         Forgot your password?
                       </Link>
+                      <span className="mx-2 text-body-secondary">|</span>
+                      <Link to="/resend-verification" className="text-decoration-none">
+                        Resend verification email
+                      </Link>
                     </div>
                   </CForm>
                   <div className="position-relative my-4">
