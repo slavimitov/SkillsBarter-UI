@@ -168,8 +168,8 @@ const Register = () => {
 
       const data = await register(payload)
       if (data?.success) {
-        setSuccessMessage(data.message || 'Account created successfully!')
-        setTimeout(() => navigate('/'), 2000)
+        setSuccessMessage(data.message || 'Registration successful! Please check your email to verify your account.')
+        setTimeout(() => navigate('/login'), 3000)
         return
       }
 
