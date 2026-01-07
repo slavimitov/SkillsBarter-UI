@@ -72,7 +72,7 @@ const ResetPassword = () => {
 
     try {
       setIsSubmitting(true)
-      const data = await resetPassword(token, password)
+      const data = await resetPassword(token, password, confirmPassword)
       if (data?.success) {
         setIsSuccess(true)
         setServerMessage(data.message || 'Password has been reset successfully.')
