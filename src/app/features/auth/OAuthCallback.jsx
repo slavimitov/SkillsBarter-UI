@@ -11,42 +11,52 @@ import {
   CSpinner,
 } from '@coreui/react'
 import * as tokenService from '../../services/tokenService'
+import { useAuth } from '../../contexts/AuthContext'
 
 const OAuthCallback = () => {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const [error, setError] = useState('')
+  const { refreshProfile } = useAuth()
 
   useEffect(() => {
-    const token = searchParams.get('token')
-    const refreshToken = searchParams.get('refreshToken')
-    const success = searchParams.get('success')
-    const errorMessage = searchParams.get('error')
-    const newUser = searchParams.get('newUser')
+    const handleOAuthCallback = async () => {
+      const token = searchParams.get('token')
+      const refreshToken = searchParams.get('refreshToken')
+      const success = searchParams.get('success')
+      const errorMessage = searchParams.get('error')
+      const newUser = searchParams.get('newUser')
 
-    if (errorMessage) {
-      setError(errorMessage)
-      return
-    }
-
-    if (success === 'true' && token) {
-      tokenService.setAccessToken(token)
-      if (refreshToken) {
-        tokenService.setRefreshToken(refreshToken)
+      if (errorMessage) {
+        setError(errorMessage)
+        return
       }
 
-      if (newUser === 'true') {
-        navigate('/register?oauth=1', { replace: true })
-      } else {
-        navigate('/', { replace: true })
+      if (success === 'true' && token) {
+        // Store tokens first
+        tokenService.setAccessToken(token)
+        if (refreshToken) {
+          tokenService.setRefreshToken(refreshToken)
+        }
+
+        // Refresh the auth context to recognize the new tokens
+        await refreshProfile()
+
+        if (newUser === 'true') {
+          navigate('/register?oauth=1', { replace: true })
+        } else {
+          navigate('/', { replace: true })
+        }
+        return
       }
-      return
+
+      if (!token) {
+        setError('Authentication failed. No token received.')
+      }
     }
 
-    if (!token) {
-      setError('Authentication failed. No token received.')
-    }
-  }, [searchParams, navigate])
+    handleOAuthCallback()
+  }, [searchParams, navigate, refreshProfile])
 
   if (error) {
     return (

@@ -15,6 +15,9 @@ const DefaultLayout = ({ navigation = [], routes = [] }) => {
       if (item?.to === '/admin' && !hasAdminAccess) {
         return false
       }
+      if (item?.requiresAuth && !isAuthenticated) {
+        return false
+      }
       return true
     })
   }, [isAuthenticated, user, navigation])
