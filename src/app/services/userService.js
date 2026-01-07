@@ -34,7 +34,7 @@ const userService = {
             const agreements = response.data?.agreements || []
 
             const relevantAgreements = agreements.filter(agreement =>
-                agreement.providerId === userId && !agreement.hasReviewFromMe
+                (agreement.providerId === userId || agreement.requesterId === userId) && !agreement.hasReviewFromMe
             )
 
             const canReview = relevantAgreements.length > 0
