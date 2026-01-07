@@ -14,6 +14,7 @@ const Login = React.lazy(() => import('../features/auth/Login'))
 const Register = React.lazy(() => import('../features/auth/Register'))
 const ForgotPassword = React.lazy(() => import('../features/auth/ForgotPassword'))
 const ResetPassword = React.lazy(() => import('../features/auth/ResetPassword'))
+const ConfirmEmailChange = React.lazy(() => import('../features/auth/ConfirmEmailChange'))
 const EmailVerification = React.lazy(() => import('../features/auth/EmailVerification'))
 const ResendVerification = React.lazy(() => import('../features/auth/ResendVerification'))
 const OAuthCallback = React.lazy(() => import('../features/auth/OAuthCallback'))
@@ -51,6 +52,7 @@ const routes = [
   { path: '/register', name: 'Register', element: Register, layout: 'public' },
   { path: '/forgot-password', name: 'Forgot Password', element: ForgotPassword, layout: 'public' },
   { path: '/reset-password', name: 'Reset Password', element: ResetPassword, layout: 'public' },
+  { path: '/confirm-email-change', name: 'Confirm Email Change', element: ConfirmEmailChange, layout: 'public' },
   { path: '/verify-email', name: 'Email Verification', element: EmailVerification, layout: 'public' },
   { path: '/resend-verification', name: 'Resend Verification', element: ResendVerification, layout: 'public' },
   { path: '/oauth-callback', name: 'OAuth Callback', element: OAuthCallback, layout: 'public' },

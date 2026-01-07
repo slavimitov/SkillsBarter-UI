@@ -189,8 +189,8 @@ export const AuthProvider = ({ children }) => {
     return data
   }, [])
 
-  const resetPassword = useCallback(async (token, newPassword) => {
-    const { data } = await httpClient.post('/auth/reset-password', { token, newPassword })
+  const resetPassword = useCallback(async (token, newPassword, confirmPassword) => {
+    const { data } = await httpClient.post('/auth/reset-password', { token, newPassword, confirmPassword })
     return data
   }, [])
 
