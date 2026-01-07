@@ -17,7 +17,7 @@ import {
   CSpinner,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilAt, cilLockLocked, cibGoogle, cibFacebook } from '@coreui/icons'
+import { cilAt, cilLockLocked, cibGoogle } from '@coreui/icons'
 
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -37,10 +37,6 @@ const Login = () => {
 
   const handleGoogleLogin = () => {
     window.location.href = `${API_BASE_URL}/api/auth/login-google`
-  }
-
-  const handleFacebookLogin = () => {
-    window.location.href = `${API_BASE_URL}/api/auth/login-facebook`
   }
 
   const validate = () => {
@@ -165,14 +161,6 @@ const Login = () => {
                     >
                       <CIcon icon={cibGoogle} className="me-2" />
                       Sign in with Google
-                    </CButton>
-                    <CButton
-                      color="light"
-                      className="border"
-                      onClick={handleFacebookLogin}
-                    >
-                      <CIcon icon={cibFacebook} className="me-2 text-primary" />
-                      Sign in with Facebook
                     </CButton>
                   </div>
                   <hr className="my-4" />
