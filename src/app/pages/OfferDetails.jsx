@@ -23,6 +23,7 @@ import {
   cilClock,
   cilTrash,
   cilPencil,
+  cilSwapHorizontal,
 } from '@coreui/icons'
 import httpClient from '../services/httpClient'
 import { useAuth } from '../contexts/AuthContext'
@@ -36,6 +37,7 @@ const OfferDetails = () => {
   const { showSuccess, showError } = useToast()
 
   const [offer, setOffer] = useState(null)
+  const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -67,8 +69,20 @@ const OfferDetails = () => {
       }
     }
 
+    const fetchCategories = async () => {
+      try {
+        const { data } = await httpClient.get('/skills/categories')
+        if (!cancelled) {
+          setCategories(Array.isArray(data) ? data : [])
+        }
+      } catch (err) {
+        console.error('Error loading categories:', err)
+      }
+    }
+
     if (id) {
       fetchOffer()
+      fetchCategories()
     }
 
     return () => {
@@ -139,6 +153,11 @@ const OfferDetails = () => {
       .join('')
       .toUpperCase()
       .substring(0, 2)
+  }
+
+  const getCategoryLabel = (code) => {
+    const cat = categories.find((c) => c.code === code)
+    return cat?.label || code
   }
 
   const renderStars = (rating) => {
@@ -294,6 +313,32 @@ const OfferDetails = () => {
               </div>
             </CCardBody>
           </CCard>
+
+          {offer.desiredCategoryCodes?.length > 0 && (
+            <CCard className="border-0 shadow-sm mb-4">
+              <CCardBody className="p-4">
+                <h5 className="fw-semibold mb-3 d-flex align-items-center gap-2">
+                  <CIcon icon={cilSwapHorizontal} className="text-primary" />
+                  Looking For In Return
+                </h5>
+                <p className="text-body-secondary small mb-3">
+                  The offer owner is interested in receiving skills from these categories:
+                </p>
+                <div className="d-flex flex-wrap gap-2">
+                  {offer.desiredCategoryCodes.map((code) => (
+                    <CBadge
+                      key={code}
+                      color="info"
+                      shape="rounded-pill"
+                      className="px-3 py-2"
+                    >
+                      {getCategoryLabel(code)}
+                    </CBadge>
+                  ))}
+                </div>
+              </CCardBody>
+            </CCard>
+          )}
 
           {(tags.length > 0 || location || availability) && (
             <CCard className="border-0 shadow-sm mb-4">

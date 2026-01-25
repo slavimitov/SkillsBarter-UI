@@ -14,7 +14,7 @@ import {
   CSpinner,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilStar, cilUser, cilCalendar, cilArrowRight, cilTrash } from '@coreui/icons'
+import { cilStar, cilUser, cilCalendar, cilArrowRight, cilTrash, cilSwapHorizontal } from '@coreui/icons'
 import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
 import { ConfirmModal } from '../components'
@@ -33,6 +33,8 @@ const Offers = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
+  const [desiredCategoryFilter, setDesiredCategoryFilter] = useState('')
+  const [categories, setCategories] = useState([])
   const [sortBy, setSortBy] = useState('newest')
   const [skillsLoaded, setSkillsLoaded] = useState(false)
 
@@ -71,7 +73,18 @@ const Offers = () => {
         setSkillsLoaded(true)
       }
     }
+
+    const fetchCategories = async () => {
+      try {
+        const { data } = await httpClient.get('/skills/categories')
+        setCategories(Array.isArray(data) ? data : [])
+      } catch (err) {
+        console.error('Error loading categories:', err)
+      }
+    }
+
     fetchSkills()
+    fetchCategories()
   }, [])
 
   const fetchData = async () => {
@@ -95,6 +108,10 @@ const Offers = () => {
         }
       }
 
+      if (desiredCategoryFilter) {
+        params.desiredCategoryCodes = desiredCategoryFilter
+      }
+
       const offersRes = await httpClient.get('/offers', { params })
       const offersPayload = offersRes?.data
       const offersItems = Array.isArray(offersPayload) ? offersPayload : offersPayload?.items
@@ -110,7 +127,7 @@ const Offers = () => {
 
   useEffect(() => {
     fetchData()
-  }, [debouncedSearchTerm, categoryFilter, skillsLoaded])
+  }, [debouncedSearchTerm, categoryFilter, desiredCategoryFilter, skillsLoaded])
 
   const handleCreateOffer = () => {
     navigate(isAuthenticated ? '/offers/new' : '/login')
@@ -164,6 +181,11 @@ const Offers = () => {
     if (!text) return 'No description provided.'
     if (text.length <= maxLength) return text
     return text.substring(0, maxLength).trim() + '...'
+  }
+
+  const getCategoryLabel = (code) => {
+    const cat = categories.find((c) => c.code === code)
+    return cat?.label || code
   }
 
   const getStatusColor = (statusCode, statusLabel) => {
@@ -245,12 +267,12 @@ const Offers = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </CCol>
-            <CCol md={4} lg={3}>
+            <CCol md={3} lg={2}>
               <CFormSelect
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
               >
-                <option value="">All Categories</option>
+                <option value="">All Skills</option>
                 {uniqueCategories.map((cat) => (
                   <option key={cat} value={cat}>
                     {cat}
@@ -259,6 +281,19 @@ const Offers = () => {
               </CFormSelect>
             </CCol>
             <CCol md={3} lg={2}>
+              <CFormSelect
+                value={desiredCategoryFilter}
+                onChange={(e) => setDesiredCategoryFilter(e.target.value)}
+              >
+                <option value="">Looking For...</option>
+                {categories.map((cat) => (
+                  <option key={cat.code} value={cat.code}>
+                    {cat.label}
+                  </option>
+                ))}
+              </CFormSelect>
+            </CCol>
+            <CCol md={2} lg={2}>
               <CFormSelect value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
                 <option value="newest">Newest</option>
                 <option value="oldest">Oldest</option>
@@ -374,6 +409,37 @@ const Offers = () => {
                     >
                       {truncateText(offer.description, 150)}
                     </p>
+
+                    {offer.desiredCategoryCodes?.length > 0 && (
+                      <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
+                        <span className="text-body-secondary small d-flex align-items-center gap-1">
+                          <CIcon icon={cilSwapHorizontal} size="sm" />
+                          Looking for:
+                        </span>
+                        {offer.desiredCategoryCodes.slice(0, 3).map((code) => (
+                          <CBadge
+                            key={code}
+                            color="info"
+                            shape="rounded-pill"
+                            className="px-2 py-1 fw-normal"
+                            style={{ fontSize: '0.75rem' }}
+                          >
+                            {getCategoryLabel(code)}
+                          </CBadge>
+                        ))}
+                        {offer.desiredCategoryCodes.length > 3 && (
+                          <CBadge
+                            color="light"
+                            textColor="secondary"
+                            shape="rounded-pill"
+                            className="px-2 py-1 fw-normal"
+                            style={{ fontSize: '0.75rem' }}
+                          >
+                            +{offer.desiredCategoryCodes.length - 3} more
+                          </CBadge>
+                        )}
+                      </div>
+                    )}
 
                     {tags.length > 0 && (
                       <div className="d-flex flex-wrap gap-1 mb-3">

@@ -5,6 +5,7 @@ import {
   CCol,
   CContainer,
   CForm,
+  CFormCheck,
   CFormFeedback,
   CFormInput,
   CFormSelect,
@@ -14,7 +15,7 @@ import {
   CAlert,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilGift, cilLayers, cilList, cilNotes, cilShortText } from '@coreui/icons'
+import { cilGift, cilLayers, cilList, cilNotes, cilShortText, cilSwapHorizontal } from '@coreui/icons'
 
 import httpClient from '../services/httpClient'
 import { useToast } from '../contexts/ToastContext'
@@ -57,6 +58,7 @@ const initialValues = {
   description: '',
   skillId: '',
   extraDetails: '',
+  desiredCategoryCodes: [],
 }
 
 const CreateOffer = () => {
@@ -64,6 +66,7 @@ const CreateOffer = () => {
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [skills, setSkills] = useState([])
+  const [categories, setCategories] = useState([])
   const [skillsError, setSkillsError] = useState('')
   const [isLoadingSkills, setIsLoadingSkills] = useState(false)
   const navigate = useNavigate()
@@ -86,6 +89,7 @@ const CreateOffer = () => {
             description: splitDesc[0] || '',
             extraDetails: splitDesc[1] || '',
             skillId: data.skillId,
+            desiredCategoryCodes: data.desiredCategoryCodes || [],
           })
         }
       } catch (error) {
@@ -125,7 +129,20 @@ const CreateOffer = () => {
         }
       }
     }
+
+    const fetchCategories = async () => {
+      try {
+        const { data } = await httpClient.get('/skills/categories')
+        if (isMounted) {
+          setCategories(Array.isArray(data) ? data : [])
+        }
+      } catch (error) {
+        console.error('Failed to load categories:', error)
+      }
+    }
+
     fetchSkills()
+    fetchCategories()
     return () => {
       isMounted = false
     }
@@ -134,6 +151,16 @@ const CreateOffer = () => {
   const handleChange = (event) => {
     const { name, value } = event.target
     setFormValues((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleCategoryToggle = (code) => {
+    setFormValues((prev) => {
+      const current = prev.desiredCategoryCodes || []
+      const updated = current.includes(code)
+        ? current.filter((c) => c !== code)
+        : [...current, code]
+      return { ...prev, desiredCategoryCodes: updated }
+    })
   }
 
   const validate = () => {
@@ -168,6 +195,7 @@ const CreateOffer = () => {
       title: formValues.title.trim(),
       description: mergedDescription,
       skillId: Number(formValues.skillId),
+      desiredCategoryCodes: formValues.desiredCategoryCodes || [],
     }
 
     try {
@@ -270,6 +298,30 @@ const CreateOffer = () => {
                         {skillsError}
                       </CAlert>
                     )}
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="form-label fw-semibold mb-2 fs-6">
+                      <CIcon icon={cilSwapHorizontal} className="me-2 text-primary" />
+                      What do you want in return?
+                      <span className="text-body-secondary fw-normal ms-2">(Optional)</span>
+                    </label>
+                    <p className="text-body-secondary small mb-3">
+                      Select the skill categories you&apos;re interested in receiving
+                    </p>
+                    <div className="d-flex flex-wrap gap-2">
+                      {categories.map((cat) => (
+                        <CFormCheck
+                          key={cat.code}
+                          type="checkbox"
+                          id={`cat-${cat.code}`}
+                          label={cat.label}
+                          checked={formValues.desiredCategoryCodes?.includes(cat.code) || false}
+                          onChange={() => handleCategoryToggle(cat.code)}
+                          button={{ color: 'outline-primary', variant: 'outline' }}
+                        />
+                      ))}
+                    </div>
                   </div>
 
                   <div className="mb-4">
